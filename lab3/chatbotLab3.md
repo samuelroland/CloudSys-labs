@@ -8,7 +8,12 @@ These files will be used in the `create_instance_switch.py` script.
 TODO: create a requirement.txt file to install python lib?
 
 ## Object storage Creation
-TODO
+```sh
+$ pip install openstacksdk
+$ python create-S3-and-put-docs_switch.py --container_name groupd --pdf_path ../../../TSM_CloudSys-2024-25.pdf
+```
+With this script, we create container in object store, upload an pdf. We can also download this pdf, list 
+object storage and contents and delete a dedicated container.
 
 ## Vector Store Creation
 TODO
