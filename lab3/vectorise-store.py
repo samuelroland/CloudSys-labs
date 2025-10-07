@@ -76,11 +76,11 @@ def create_index(client, index_name):
 
 # This implementation is based on https://docs.azure.cn/en-us/cosmos-db/nosql/how-to-python-vector-index-query#enable-the-feature
 def create_cosmos_db_container(container_name, account_name):
-    # Define that the JSON field contentVector need to be indexed as the embeddings
+    # Define that the JSON field vector_field need to be indexed as the embeddings
     vector_embedding_policy = {
         "vectorEmbeddings": [
             {
-                "path": "/contentVector",
+                "path": "/vector_field",
                 # TODO: check with what we did in google vertex AI
                 "dataType": "float32",
                         "distanceFunction": "dotproduct",
@@ -97,10 +97,10 @@ def create_cosmos_db_container(container_name, account_name):
         ],
         "excludedPaths": [
             {
-                "path": "/contentVector/*",
+                "path": "/vector_field/*",
             }
         ],
-        "vectorIndexes": [{"path": "/contentVector", "type": "quantizedFlat"}]
+        "vectorIndexes": [{"path": "/vector_field", "type": "quantizedFlat"}]
     }
 
     try:
@@ -117,9 +117,8 @@ def create_cosmos_db_container(container_name, account_name):
     except exceptions.CosmosHttpResponseError:
         raise
 
+
 # Load docs from S3
-
-
 def download_documents(bucket_name, local_dir):
     response = s3_client.list_objects_v2(Bucket=bucket_name)
     for item in response['Contents']:

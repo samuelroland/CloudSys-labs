@@ -22,7 +22,7 @@ object storage and contents and delete a dedicated container.
 
 ## Vector Store Creation
 We are going to use **Azure Cosmos DB** for this part.
-The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB). But we didn't used it as we 
+The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB)
 
 1. The first thing to do is to [install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
 1. Install Python dependencies
