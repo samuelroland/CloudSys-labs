@@ -42,8 +42,16 @@ The home page of this service is here: [Create an Azure Cosmos DB account](https
     Resource group 'groupd-chatbot-deploy' deleted successfully.
     ```
 
-## Step 3: Vectorizing the PDF Files: 
+TODO: should we move the hardcoded values as program args ???
+
+## Vectorizing the PDF Files
+We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in the Cosmos DB.
+
+Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
+```sh
+> python vectorise-store.py --account_name groupdchatbotd1234 --container_name "groupd-vector-container-cosmos"
 TODO
+```
 
 ## Create switch Instance
 

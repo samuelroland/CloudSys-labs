@@ -42,12 +42,6 @@ def create_resource_group(name, location):
     return rg_result.name
 
 
-# Replace with your details
-location = "switzerlandnorth"  # the region
-subscription_id = get_subscription_id()
-resource_group_name = create_resource_group("groupd-chatbot-deploy", location)
-account_name = "groupdchatbotd1234"
-
 # # Authenticate
 #
 # # Define the capability to be added
@@ -85,6 +79,12 @@ def create_cosmos_db():
 
     result = async_create.result()
     print(f"Created Cosmos DB account: {result.name}")
+    print(result)
 
 
+location = "switzerlandnorth"  # the region
+subscription_id = get_subscription_id()
+account_name = "groupdchatbotd1234"
+resource_group_name = "groupd-chatbot-deploy"
+create_resource_group(resource_group_name, location)
 create_cosmos_db()

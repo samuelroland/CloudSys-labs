@@ -9,9 +9,22 @@ from langchain_aws import BedrockEmbeddings
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 from langchain_community.vectorstores import OpenSearchVectorSearch
 import argparse
+import uuid
+from azure.cosmos import CosmosClient, PartitionKey, exceptions, DatabaseProxy
+from azure.identity import DefaultAzureCredential
+
 
 # S3_client
 s3_client = boto3.client('s3')
+
+
+# The account name is an arbitrary name defined during cosmo db creation
+def get_cosmos_client(account_name):
+    credential = DefaultAzureCredential()
+    cosmos_url = "https://{0}.documents.azure.com:443/".format(
+        account_name)
+    return CosmosClient(cosmos_url, credential=credential)
+
 
 # Bedrock client - use the same region as configured
 session = boto3.Session()
@@ -19,7 +32,6 @@ session = boto3.Session()
 region = session.region_name or 'us-east-1'
 bedrock_client = boto3.client(
     service_name="bedrock-runtime", region_name=region)
-
 
 # Configuration for AWS authentication and OpenSearch client
 credentials = session.get_credentials()
@@ -31,9 +43,9 @@ model_ids = [
     "cohere.embed-english-v3"          # Alternative
 ]
 
+
 # Create Index in Opensearch
-
-
+# TODO: delete this when the equivalent is working
 def create_index(client, index_name):
     indexBody = {
         "settings": {
@@ -62,7 +74,52 @@ def create_index(client, index_name):
         print("(Index likely already exists?)")
 
 
+# This implementation is based on https://docs.azure.cn/en-us/cosmos-db/nosql/how-to-python-vector-index-query#enable-the-feature
+def create_cosmos_db_container(container_name, account_name):
+    # Define that the JSON field contentVector need to be indexed as the embeddings
+    vector_embedding_policy = {
+        "vectorEmbeddings": [
+            {
+                "path": "/contentVector",
+                # TODO: check with what we did in google vertex AI
+                "dataType": "float32",
+                        "distanceFunction": "dotproduct",
+                        "dimensions": 8
+            },
+        ]
+    }
+    # Index everything except the embedding field
+    indexing_policy = {
+        "includedPaths": [
+            {
+                "path": "/*"
+            }
+        ],
+        "excludedPaths": [
+            {
+                "path": "/contentVector/*",
+            }
+        ],
+        "vectorIndexes": [{"path": "/contentVector", "type": "quantizedFlat"}]
+    }
+
+    try:
+
+        db = get_cosmos_client(account_name).get_database_client(account_name)
+
+        container = db.create_container_if_not_exists(
+            id=container_name,
+            partition_key=PartitionKey(path='/id'),
+            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy)
+        print('Container with id \'{0}\' created'.format(container.id))
+
+    except exceptions.CosmosHttpResponseError:
+        raise
+
 # Load docs from S3
+
+
 def download_documents(bucket_name, local_dir):
     response = s3_client.list_objects_v2(Bucket=bucket_name)
     for item in response['Contents']:
@@ -81,9 +138,8 @@ def split_text(docs, chunk_size, chunk_overlap):
 
     return chunks
 
+
 # Generate embeddings
-
-
 def generate_embeddings(bedrock_client, chunks):
 
     embeddings_model = None
@@ -114,9 +170,9 @@ def generate_embeddings(bedrock_client, chunks):
 
     return embeddings
 
+
 # Store generated embeddings into an OpenSearch index.
-
-
+# TODO: delete this when the equivalent is working
 def store_embeddings(embeddings, texts, meta_data, host, awsauth, index_name):
 
     docsearch = OpenSearchVectorSearch.from_embeddings(
@@ -137,55 +193,31 @@ def store_embeddings(embeddings, texts, meta_data, host, awsauth, index_name):
     return docsearch
 
 
-# Func to do both generating and storing embeddings
-def generate_store_embeddings(bedrock_client, chunks, host, awsauth, index_name):
+# Store generated embeddings into a Cosmos DB
+def store_embeddings_cosmos(embeddings, texts, meta_data_list, account_name, database_name, container_name):
+    client = get_cosmos_client(account_name)
+    database = client.get_database_client(database_name)
+    container = database.get_container_client(container_name)
 
-    embeddings_model = None
-    for model_id in model_ids:
-        try:
-            embeddings_model = BedrockEmbeddings(
-                model_id=model_id, client=bedrock_client)
-            print(f"Using embedding model: {model_id}")
-            break
-        except Exception as e:
-            print(f"Model {model_id} not available: {e}")
-            continue
+    documents = []
+    for i, (embedding, text, metadata) in enumerate(zip(embeddings, texts, meta_data_list)):
+        doc = {
+            "id": str(uuid.uuid4()),
+            "vector_field": embedding,
+            "text": text,
+            **metadata  # merge metadata keys directly into the doc
+        }
+        documents.append(doc)
 
-    if embeddings_model is None:
-        raise ValueError(
-            "No embedding model available. Please check your Bedrock model access.")
+    for doc in documents:
+        container.upsert_item(doc)
 
-    docsearch = OpenSearchVectorSearch.from_documents(
-        chunks,
-        embeddings_model,
-        opensearch_url=f'https://{host}:443',
-        http_auth=awsauth,
-        use_ssl=True,
-        verify_certs=True,
-        connection_class=RequestsHttpConnection,
-        index_name=index_name,
-        bulk_size=100,  # Reduced bulk size to avoid timeouts
-        timeout=120,    # Increased timeout to 2 minutes
-        max_chunk_bytes=10485760  # 10MB max chunk size
-    )
-
-    return docsearch
+    return f"{len(documents)} documents upserted into Cosmos DB"
 
 
 # main
-def main(bucket_name, endpoint, index_name, local_path):
-
-    # Opensearch Client
-    OpenSearch_client = OpenSearch(
-        hosts=[{'host': endpoint, 'port': 443}],
-        http_auth=awsauth,
-        use_ssl=True,
-        verify_certs=True,
-        connection_class=RequestsHttpConnection,
-        timeout=120,    # 2 minute timeout
-        max_retries=3,  # Retry failed requests
-        retry_on_timeout=True
-    )
+# TODO: continue to refactor logic with cosmos db
+def main(bucket_name, account_name, local_path, container_name):
 
     download_documents(bucket_name, local_path)
     loader = PyPDFDirectoryLoader(local_path)
@@ -193,7 +225,7 @@ def main(bucket_name, endpoint, index_name, local_path):
     print('Start chunking')
     chunks = split_text(docs, 1000, 100)
     print(chunks[1])
-    create_index(OpenSearch_client, index_name)
+    create_cosmos_db_container(container_name, account_name)
     print('Start vectorising')
     embeddings = generate_embeddings(bedrock_client, chunks)
     print(embeddings[1])
@@ -205,8 +237,14 @@ def main(bucket_name, endpoint, index_name, local_path):
     print(f"Storing {len(embeddings)} embeddings in batches...")
 
     try:
-        store_embeddings(embeddings, texts, meta_data,
-                         endpoint, awsauth, index_name)
+        store_embeddings_cosmos(
+            embeddings,
+            texts,
+            meta_data,
+            account_name,
+            database_name=account_name,
+            container_name=container_name,
+        )
         print('End storing - Success!')
     except Exception as e:
         print(f"Error storing embeddings: {e}")
@@ -222,9 +260,14 @@ if __name__ == "__main__":
         description="Process PDF documents and store their embeddings.")
     parser.add_argument(
         "--bucket_name", help="The S3 bucket name where documents are stored")
-    parser.add_argument("--endpoint", help="The OpenSearch service endpoint")
     parser.add_argument(
-        "--index_name", help="The name of the OpenSearch index")
+        "--account_name", help="The account_name of Azure Cosmos Database")
+    # TODO: remove this probably useless arg as equal to the account_name
+    # parser.add_argument(
+    #     "--database_name", help="The name of the existing Azure Cosmos Database")
+    parser.add_argument(
+        "--container_name", help="The name of the container to create inside the Azure Cosmos Database")
     parser.add_argument("--local_path", help="local path")
     args = parser.parse_args()
-    main(args.bucket_name, args.endpoint, args.index_name, args.local_path)
+    main(args.bucket_name, args.account_name,
+         args.local_path, args.container_name)
