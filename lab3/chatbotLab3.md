@@ -16,7 +16,26 @@ With this script, we create container in object store, upload an pdf. We can als
 object storage and contents and delete a dedicated container.
 
 ## Vector Store Creation
-TODO
+We are going to use **Azure Cosmos DB** for this part.
+The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB). But we didn't used it as we 
+
+1. The first thing to do is to [install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
+1. Install Python dependencies
+    ```sh
+    pip install -r requirements.txt
+    ```
+1. Then you can run the Python script that will 
+    ```sh
+    > python setup-azure.py
+    Provisioned resource group groupd-chatbot-deploy
+    Created Cosmos DB account: groupdchatbotd1234
+    ```
+1. At the end of the lab, when you need to delete the Azure infrastructure, run this script
+    ```sh
+    > python delete-azure.py 
+    Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
+    Resource group 'groupd-chatbot-deploy' deleted successfully.
+    ```
 
 ## Step 3: Vectorizing the PDF Files: 
 TODO
