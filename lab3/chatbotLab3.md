@@ -1,5 +1,10 @@
 # Chatbot lab
 
+## Goal
+Using proprietary APIs of Cloud providers to develop a smart chatbot  
+<img src="images/shema1.png" width="50%"/><img src="images/shema2.png" width="50%" />
+
+
 ## Set up environment:
 To access Switch Engine, add the `clouds.yaml` file to the switch folder.
 Also add the `switchengine-tsm-cloudsys.pem` key pair to the switch folder.
