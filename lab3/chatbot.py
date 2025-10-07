@@ -1,5 +1,7 @@
 # Based on the app of Abir Chebbi (abir.chebbi@hesge.ch)
 # Modified for the Switch Engine+Azure Cosmos DB+Google Vertex AI
+# Helped by ChatGPT
+from azure.cosmos import CosmosClient, PartitionKey
 import boto3
 import streamlit as st
 from langchain_aws import BedrockEmbeddings, ChatBedrock
@@ -64,6 +66,14 @@ def ospensearch_client(endpoint):
     return client
 
 
+# CosmoDB client
+def cosmosdb_client(endpoint, key, database_name, container_name):
+    client = CosmosClient(endpoint, key)
+    database = client.get_database_client(database_name)
+    container = database.get_container_client(container_name)
+    return container
+
+
 def get_embedding(question, bedrock_client):
     # Try multiple model IDs in order of preference (same as vectorization script)
     model_ids = [
@@ -110,6 +120,26 @@ def similarity_search(client, embed_query, index_name):
     }
     response = client.search(index=index_name, body=query_body)
     return response['hits']['hits']
+
+
+# Cosmos DB equivalent of similarity_search()
+def similarity_search_cosmos_db(container, embed_query, vector_field='vector_field', top_k=5):
+    vector_query = {
+        "vector": embed_query,
+        "topK": top_k,
+        "vectorField": vector_field,
+        "similarityFunction": "cosine"  # or 'euclidean', 'dotProduct'
+    }
+
+    query = {
+        "filter": "",
+        "vectorSearch": vector_query
+    }
+
+    return list(container.query_items(
+        query=query,
+        enable_vector_search=True
+    ))
 
 
 def prepare_prompt(question, context):
