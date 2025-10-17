@@ -35,9 +35,9 @@ The home page of this service is here: [Create an Azure Cosmos DB account](https
     Provisioned resource group groupd-chatbot-deploy
     Created Cosmos DB account: groupdchatbotd1234
     ```
-1. At the end of the lab, when you need to delete the Azure infrastructure, run this script
+1. At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
     ```sh
-    > python delete-azure.py 
+    > python delete-azure.py
     Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
     Resource group 'groupd-chatbot-deploy' deleted successfully.
     ```
@@ -47,10 +47,30 @@ TODO: should we move the hardcoded values as program args ???
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in the Cosmos DB.
 
+Setup the Google Cloud environment
+1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
+1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
+1. Install the GCloud CLI
+1. Login `gcloud auth login`
+1. Set the project `gcloud config set project chatbot-475420`
+1. Make it possible to access your credentials by Python code: `gcloud auth application-default login`
+
+todo: even if not compatible with azure-cli ??
+```sh
+pip install --upgrade azure-cosmos
+```
+
+Get your principal id of your azure account, this should be given as `--azure_principal_id`
+
+```sh
+az ad signed-in-user show --query id -o tsv
+```
+
 Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
-> python vectorise-store.py --account_name groupdchatbotd1234 --container_name "groupd-vector-container-cosmos"
-TODO
+> python vectorise-store.py --account_name groupdchatbotd1234 --container_name "groupd-vector-container-cosmos" --local_path bucketcontent
+TODO add --bucket_name in example
+TODO: support injecting project_id ?
 ```
 
 ## Create switch Instance
