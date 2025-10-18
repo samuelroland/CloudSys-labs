@@ -12,25 +12,26 @@ import argparse
 import uuid
 from azure.cosmos import CosmosClient, PartitionKey, exceptions, DatabaseProxy
 from azure.identity import DefaultAzureCredential
-from vertexai.preview.language_models import TextEmbeddingModel
-import vertexai
 
-
+from google.genai import types
+from google.genai import Client
 # The account name is an arbitrary name defined during cosmo db creation
+
+
 def get_cosmos_client(account_name):
-    credential = DefaultAzureCredential()
-    cosmos_url = "https://{0}.documents.azure.com:443/".format(
-        account_name)
-    return CosmosClient(cosmos_url, credential=credential)
+    cosmos_url = "https://{0}.documents.azure.com:443/".format(account_name)
+    # TODO: pass that as arguments ?
+    with open('azure-db-key.txt', 'r') as file:
+        key = file.read().rstrip()
+    return CosmosClient(cosmos_url, credential=key)
 
 
 # Google Vertex AI Client
-region = 'europe-west12'
+region = 'us-central1'
 project_id = "chatbot-475420"
-ai_model = "textembedding-gecko@latest"
-# https://cloud.google.com/vertex-ai/generative-ai/docs/rag-engine/use-embedding-models#use-vertexai-text-embedding-models
-ai_vectors_dimensions = 768
-vertexai.init(project=project_id, location=region)
+ai_model = "gemini-embedding-001"
+# https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-embedding-001?project=chatbot-475420
+ai_vectors_dimensions = 768  # TODO fix that
 
 
 # This implementation is based on https://docs.azure.cn/en-us/cosmos-db/nosql/how-to-python-vector-index-query#enable-the-feature
@@ -63,15 +64,17 @@ def create_cosmos_db_container(container_name, account_name):
     }
 
     try:
+        client = get_cosmos_client(account_name)
+        db = client.create_database_if_not_exists(id=account_name)
 
-        db = get_cosmos_client(account_name).get_database_client(account_name)
-
+        print('\nDatabase with id \'{0}\' exists or is created'.format(db.id))
         container = db.create_container_if_not_exists(
             id=container_name,
             partition_key=PartitionKey(path='/id'),
             indexing_policy=indexing_policy,
             vector_embedding_policy=vector_embedding_policy)
-        print('Container with id \'{0}\' created'.format(container.id))
+        print('\nContainer with id \'{0}\' exists or is created\n'.format(
+            container.id))
 
     except exceptions.CosmosHttpResponseError:
         raise
@@ -102,20 +105,28 @@ def split_text(docs, chunk_size, chunk_overlap):
 
 # Generate embedding with Google Vertex AI from given chunks of the PDF
 def generate_embeddings(chunks):
-    # Use Vertex AI's embedding model
-    # https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/textembedding-gecko
-    model = TextEmbeddingModel.from_pretrained(ai_model)
-
     chunks_list = [chunk.page_content for chunk in chunks]
 
     # Batch embeddings (Vertex AI supports batching up to 100 texts per request)
     embeddings = []
     batch_size = 100
+    client = Client(
+        vertexai=True, project=project_id, location=region)
+
     for i in range(0, len(chunks_list), batch_size):
         batch = chunks_list[i:i+batch_size]
-        batch_embeddings = model.get_embeddings(batch)
+        batch_embeddings = client.models.embed_content(
+            model=ai_model,
+            contents=batch,
+            # config=EmbedContentConfig(
+            #     task_type="RETRIEVAL_DOCUMENT",  # Optional
+            #     output_dimensionality=1000,  # Optional
+            #     title="Driver's License",  # Optional
+            # ),
+        )
+        print(batch_embeddings)
         # Convert to list of floats
-        embeddings.extend([e.values for e in batch_embeddings])
+        embeddings.extend([e.values for e in batch_embeddings.embeddings])
 
     # Debug: Print actual embedding dimensions
     if embeddings:

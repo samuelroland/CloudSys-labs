@@ -35,12 +35,10 @@ The home page of this service is here: [Create an Azure Cosmos DB account](https
     Provisioned resource group groupd-chatbot-deploy
     Created Cosmos DB account: groupdchatbotd1234
     ```
-1. At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
-    ```sh
-    > python delete-azure.py
-    Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
-    Resource group 'groupd-chatbot-deploy' deleted successfully.
-    ```
+
+1. Get the primary key in your portal and save it under a `azure-db-key.txt` file in this folder. This will be used for authentication for next scripts.
+
+![primary key](./images/azure-cosmos-db-primary-key.png)
 
 TODO: should we move the hardcoded values as program args ???
 
@@ -58,12 +56,6 @@ Setup the Google Cloud environment
 todo: even if not compatible with azure-cli ??
 ```sh
 pip install --upgrade azure-cosmos
-```
-
-Get your principal id of your azure account, this should be given as `--azure_principal_id`
-
-```sh
-az ad signed-in-user show --query id -o tsv
 ```
 
 Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
@@ -88,3 +80,12 @@ If needed, you can use the `delete_server` function in the same script.
 
 ## Accessing the application
 TODO
+
+## Delete the infrastructure
+
+Note: At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
+```sh
+> python delete-azure.py
+Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
+Resource group 'groupd-chatbot-deploy' deleted successfully.
+```

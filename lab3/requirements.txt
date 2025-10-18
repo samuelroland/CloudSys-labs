@@ -1,4 +1,4 @@
 azure-identity
 azure-mgmt-resource
 azure-mgmt-authorization
-google-cloud-aiplatform
+google-genai

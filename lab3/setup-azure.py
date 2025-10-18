@@ -45,19 +45,6 @@ def create_resource_group(name, location):
     return rg_result.name
 
 
-# # Authenticate
-#
-# # Define the capability to be added
-# capability = Capability(name="EnableNoSQLVectorSearch")
-#
-# # Update the Cosmos DB account
-# update_params = DatabaseAccountUpdateParameters(capabilities=[capability])
-#
-# async_update = client.database_accounts.begin_update(
-#     resource_group_name, account_name, update_params
-# )
-
-
 def create_cosmos_db():
 
     # Capabilities list (including Vector Search)
@@ -85,37 +72,10 @@ def create_cosmos_db():
     print(result)
 
 
-def assign_cosmos_role(principal_id, role_definition_id, subscription_id, resource_group_name, account_name):
-    credential = DefaultAzureCredential()
-    auth_client = AuthorizationManagementClient(credential, subscription_id)
-    resource_id = f"/subscriptions/{subscription_id}/resourceGroups/{
-        resource_group_name}/providers/Microsoft.DocumentDB/databaseAccounts/{account_name}"
-    role_assignment_id = str(uuid4())
-    assignment = auth_client.role_assignments.create(
-        scope=resource_id,
-        role_assignment_name=role_assignment_id,
-        parameters={
-            "role_definition_id": role_definition_id,
-            "principal_id": principal_id,
-        },
-    )
-    print("Role assignment created:", assignment.id)
-
-
 location = "switzerlandnorth"  # the region
 subscription_id = get_subscription_id()
 account_name = "groupdchatbotd1234"
 resource_group_name = "groupd-chatbot-deploy"
 
-azure_principal_id = "a8630fe3-668a-4f50-ab53-1aba44f7adaa"
-# The role "Cosmos DB Built-in Data Contributor"
-role_definition_id = f"/subscriptions/{
-    subscription_id}/providers/Microsoft.Authorization/roleDefinitions/?????"
-# TODO: find the ID on
-# az role definition list | jq | grep Cosmos
-#
 create_resource_group(resource_group_name, location)
 create_cosmos_db()
-# TODO: this doesnt work because the role id is not correct and I cannot find what to give, nor create a custom role ourself
-assign_cosmos_role(azure_principal_id, role_definition_id,
-                   subscription_id, resource_group_name, account_name)
