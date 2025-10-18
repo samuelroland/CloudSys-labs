@@ -4,19 +4,42 @@
 Using proprietary APIs of Cloud providers to develop a smart chatbot  
 <img src="images/shema1.png" width="50%"/><img src="images/shema2.png" width="50%" />
 
+## Prerequisites
+This assumes you have Python installed and you have access to the 3 following clouds: Google Cloud, Microsoft Azure and Switch Engines.
+
+1. Install Python dependencies
+    ```sh
+    pip install -r requirements.txt
+    ```
+1. [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
+1. Setup the Google Cloud environment
+    1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
+    1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
+    1. Install the GCloud CLI
+    1. Login `gcloud auth login`
+    1. Set the project `gcloud config set project chatbot-475420`
+    1. Make it possible to access your credentials by Python code: `gcloud auth application-default login`
+
 
 ## Set up environment:
-To access Switch Engine, add the `clouds.yaml` file to the switch folder.
-TODO: how to generate this file
-Also add the `switchengine-tsm-cloudsys.pem` key pair to the switch folder.
-These files will be used in the `create_instance_switch.py` script.
+1. [Go login on Switch Engines panel](https://engines.switch.ch/) to get your generated API password
+1. [Go into the API access page to get your `clouds.yaml`](https://engines.switch.ch/horizon/project/api_access/)
+    ![switch-engines-clouds-yaml.png](images/switch-engines-clouds-yaml.png)
 
-TODO: create a requirement.txt file to install python lib?
+1. Move this file under a `switch` subfolder in this directory
+1. Edit it to add your password
+1. Go generate a new SSH keypair, name it `switchengine-tsm-cloudsys.pem` key pair to the switch folder.
+1. An SSH keypair will be created automatically under `switch/switchengine-tsm-cloudsys.pem` if it is not present.
+
+
+These files will be used in the `create_instance_switch.py` script, which you can simply run with
+```sh
+python create_instance_switch.py
+```
 
 ## Object storage Creation
 ```sh
-$ pip install openstacksdk
-$ python create-S3-and-put-docs_switch.py --container_name groupd --pdf_path ../../../TSM_CloudSys-2024-25.pdf
+python create-S3-and-put-docs_switch.py --container_name groupd --pdf_path ../../../TSM_CloudSys-2024-25.pdf
 ```
 With this script, we create container in object store, upload an pdf. We can also download this pdf, list 
 object storage and contents and delete a dedicated container.
@@ -25,11 +48,6 @@ object storage and contents and delete a dedicated container.
 We are going to use **Azure Cosmos DB** for this part.
 The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB)
 
-1. The first thing to do is to [install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
-1. Install Python dependencies
-    ```sh
-    pip install -r requirements.txt
-    ```
 1. Then you can run the Python script that will 
     ```sh
     > python setup-azure.py
@@ -43,16 +61,12 @@ The home page of this service is here: [Create an Azure Cosmos DB account](https
 
 TODO: should we move the hardcoded values as program args ???
 
+
+![cosmos-db-success.png](images/cosmos-db-success.png)
+
+
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in the Cosmos DB.
-
-Setup the Google Cloud environment
-1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
-1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
-1. Install the GCloud CLI
-1. Login `gcloud auth login`
-1. Set the project `gcloud config set project chatbot-475420`
-1. Make it possible to access your credentials by Python code: `gcloud auth application-default login`
 
 todo: even if not compatible with azure-cli ??
 ```sh
@@ -73,7 +87,7 @@ Make sure to fill the `config.ini` file !
 $ pip install openstacksdk
 $ python create_instance_switch.py 
 Create Server:
-ssh -i ./switchengine-tsm-cloudsys.pem ubuntu@2001:620:5ca1:2f0:f816:3eff:feae:87f8
+ssh -i ./switch/switchengine-tsm-cloudsys.pem ubuntu@2001:620:5ca1:2f0:f816:3eff:feae:87f8
 List Servers:
 groupd-labo1 - ACTIVE - 78f67707-26ab-4b57-8d6c-81c004df1853
 ```

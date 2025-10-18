@@ -53,7 +53,7 @@ def get_embedding(text):
     creds = service_account.Credentials.from_service_account_file(
         "vertexai-service-account-key.json", scopes=scopes)
     client = Client(vertexai=True, project=vertexai_project_id,
-                    location=region)
+                    location=region, credentials=creds)
 
     result = client.models.embed_content(
         model=ai_model_embeddings,

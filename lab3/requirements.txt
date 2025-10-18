@@ -1,3 +1,4 @@
+openstacksdk
 azure-identity
 azure-mgmt-resource
 azure-mgmt-authorization

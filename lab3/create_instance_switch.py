@@ -6,13 +6,13 @@ FLAVOR_NAME = "m1.small"
 NETWORK_NAME = "private"
 SERVER_NAME = "groupd-labo1"
 KEYPAIR_NAME = "switchengine-tsm-cloudsys"
-PRIVATE_KEYPAIR_FILE = "./switchengine-tsm-cloudsys.pem"
+PRIVATE_KEYPAIR_FILE = "./switch/switchengine-tsm-cloudsys.pem"
 
 def list_images_dispo(conn):
     print("Available Server:")
     for img in conn.compute.images():
-       print(img.name)
-       break
+        print(img.name)
+        break
 
 def create_server(conn):
     print("Create Server:")
@@ -45,7 +45,7 @@ def list_servers(conn):
     print("List Servers:")
     for server in conn.compute.servers():
         print(f"{server.name} - {server.status} - {server.id}")
-        
+
 def delete_server(conn, server_name):
     server = conn.compute.find_server(server_name)
     if server is None:
@@ -53,6 +53,7 @@ def delete_server(conn, server_name):
         return
     conn.compute.delete_server(server.id)
     print(f"Serveur '{server_name}' supprimé")
+
 
 # --- Programme principal ---
 if __name__ == "__main__":
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     # Create connection
     conn = connection.Connection(config=cloud)
 
-    #list_images_dispo(conn)
+    # list_images_dispo(conn)
     create_server(conn)
     list_servers(conn)
-    #delete_server(conn, "1c5cccd0-6f48-432b-b359-7d8186f39832")
+    # delete_server(conn, "1c5cccd0-6f48-432b-b359-7d8186f39832")
