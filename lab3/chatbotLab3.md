@@ -11,7 +11,12 @@ This assumes you have Python installed and you have access to the 3 following cl
     ```sh
     pip install -r requirements.txt
     ```
-1. [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
+1. For Azure
+    1. [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
+    1. Force the update. TODO necessary ?
+        ```sh
+        pip install --upgrade azure-cosmos
+        ```
 1. Setup the Google Cloud environment
     1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
     1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
@@ -20,7 +25,6 @@ This assumes you have Python installed and you have access to the 3 following cl
     1. Set the project `gcloud config set project chatbot-475420`
     1. Make it possible to access your credentials by Python code: `gcloud auth application-default login`
 
-
 ## Set up environment:
 1. [Go login on Switch Engines panel](https://engines.switch.ch/) to get your generated API password
 1. [Go into the API access page to get your `clouds.yaml`](https://engines.switch.ch/horizon/project/api_access/)
@@ -28,14 +32,9 @@ This assumes you have Python installed and you have access to the 3 following cl
 
 1. Move this file under a `switch` subfolder in this directory
 1. Edit it to add your password
-1. Go generate a new SSH keypair, name it `switchengine-tsm-cloudsys.pem` key pair to the switch folder.
-1. An SSH keypair will be created automatically under `switch/switchengine-tsm-cloudsys.pem` if it is not present.
+<!-- 1. Go generate a new SSH keypair, name it `switchengine-tsm-cloudsys.pem` key pair to the switch folder. -->
+1. An SSH keypair will be created automatically and downloaded under `switch/switchengine-tsm-cloudsys.pem` if it doesn't already exist.
 
-
-These files will be used in the `create_instance_switch.py` script, which you can simply run with
-```sh
-python create_instance_switch.py
-```
 
 ## Object storage Creation
 ```sh
@@ -44,7 +43,7 @@ python create-S3-and-put-docs_switch.py --container_name groupd --pdf_path ../..
 With this script, we create container in object store, upload an pdf. We can also download this pdf, list 
 object storage and contents and delete a dedicated container.
 
-## Vector Store Creation
+## Vector database creation on Azure Cosmos DB service
 We are going to use **Azure Cosmos DB** for this part.
 The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB)
 
@@ -66,12 +65,9 @@ TODO: should we move the hardcoded values as program args ???
 
 
 ## Vectorizing the PDF Files
-We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in the Cosmos DB.
+We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in a database in Cosmos DB.
 
 todo: even if not compatible with azure-cli ??
-```sh
-pip install --upgrade azure-cosmos
-```
 
 Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
@@ -80,7 +76,16 @@ TODO add --bucket_name in example
 TODO: support injecting project_id ?
 ```
 
-## Create switch Instance
+## Accessing the application locally
+At this point the chatbot can be used locally, by running
+
+```sh
+streamlit run chatbot.py
+```
+
+which should open your browser with a fully working bot. You can already ask questions about your vectorized PDFs.
+
+## Create the instance on Switch Engines
 
 Make sure to fill the `config.ini` file !
 ```sh
@@ -92,10 +97,24 @@ List Servers:
 groupd-labo1 - ACTIVE - 78f67707-26ab-4b57-8d6c-81c004df1853
 ```
 
-If needed, you can use the `delete_server` function in the same script.
+These files will be used in the `create_instance_switch.py` script, which you can simply run with
+```console
+$ python create_instance_switch.py
 
-## Accessing the application
-TODO
+Create Server:
+ssh -i ./switch/switchengine-tsm-cloudsys.pem ubuntu@10.0.5.49
+List Servers:
+groupd-labo1 - ACTIVE - 496be91b-b1a9-4afd-8a78-996994e54e11
+```
+
+TODO fix the output with public IP !
+
+Now an Ubuntu 22.04 instance of flavour `m1.small` should be running and accessible.
+
+![switch-vm-running.png](images/switch-vm-running.png)
+
+## Accessing the application online
+You can finally open your browser, open the public IP of the VM with TODO
 
 ## Delete the infrastructure
 
@@ -105,3 +124,6 @@ Note: At the end of the lab, when you need to delete the Azure infrastructure, r
 Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
 Resource group 'groupd-chatbot-deploy' deleted successfully.
 ```
+
+TODO
+If needed, you can use the `delete_server` function in the same script.
