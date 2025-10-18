@@ -36,7 +36,7 @@ def create_server(conn):
         key_name=keypair.name
     )
     server = conn.compute.wait_for_server(server)
-    print(f"VM '{SERVER_NAME}' créée avec succès.")
+    print(f"VM '{SERVER_NAME}' created.")
 
     # find public network
     public_net = None
@@ -45,14 +45,14 @@ def create_server(conn):
             public_net = net
             break
     if public_net is None:
-        raise Exception("Impossible de trouver le réseau public pour la Floating IP.")
+        raise Exception("Unable to find public network for Floating IP.")
 
     floating_ip = conn.network.create_ip(floating_network_id=public_net.id)
     
     # Get VM port
     ports = list(conn.network.ports(device_id=server.id))
     if not ports:
-        raise Exception("Impossible de trouver le port réseau de la VM")
+        raise Exception("Unable to find the VM network port")
     port_id = ports[0].id
     
     # Link Floating IP
@@ -68,10 +68,10 @@ def list_servers(conn):
 def delete_server(conn, server_name):
     server = conn.compute.find_server(server_name)
     if server is None:
-        print(f"Serveur '{server_name}' introuvable")
+        print(f"Server '{server_name}' not found")
         return
     conn.compute.delete_server(server.id)
-    print(f"Serveur '{server_name}' supprimé")
+    print(f"Server '{server_name}' deleted")
     # release floating ip
     ports = list(conn.network.ports(device_id=server.id))
     for fip in conn.network.ips():
