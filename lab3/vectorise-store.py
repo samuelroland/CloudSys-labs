@@ -1,19 +1,12 @@
 # Based on the app of Abir Chebbi (abir.chebbi@hesge.ch)
 # Modified for the Switch Engine+Azure Cosmos DB+Google Vertex AI
 # Helped by ChatGPT
-import boto3
-import os
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_aws import BedrockEmbeddings
-from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
-from langchain_community.vectorstores import OpenSearchVectorSearch
 import argparse
 import uuid
-from azure.cosmos import CosmosClient, PartitionKey, exceptions, DatabaseProxy
-from azure.identity import DefaultAzureCredential
+from azure.cosmos import CosmosClient, PartitionKey, exceptions
 
-from google.genai import types
 from google.genai import Client
 # The account name is an arbitrary name defined during cosmo db creation
 
@@ -29,7 +22,7 @@ def get_cosmos_client(account_name):
 # Google Vertex AI Client
 region = 'us-central1'
 project_id = "chatbot-475420"
-ai_model = "gemini-embedding-001"
+ai_model_embeddings = "gemini-embedding-001"
 # https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-embedding-001?project=chatbot-475420
 ai_vectors_dimensions = 768  # TODO fix that
 
@@ -116,7 +109,7 @@ def generate_embeddings(chunks):
     for i in range(0, len(chunks_list), batch_size):
         batch = chunks_list[i:i+batch_size]
         batch_embeddings = client.models.embed_content(
-            model=ai_model,
+            model=ai_model_embeddings,
             contents=batch,
             # config=EmbedContentConfig(
             #     task_type="RETRIEVAL_DOCUMENT",  # Optional

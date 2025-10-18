@@ -9,8 +9,8 @@ import configparser
 from langchain_core.prompts import PromptTemplate
 
 # same model as vectorise-store.py
-ai_model = "gemini-embedding-001"
-
+ai_model_embeddings = "gemini-embedding-001"
+ai_model_final_prompt = "gemini-2.5-flash-lite"
 
 def load_config():
     config = configparser.ConfigParser()
@@ -56,10 +56,10 @@ def get_embedding(text):
                     location=region)
 
     result = client.models.embed_content(
-        model=ai_model,
+        model=ai_model_embeddings,
         contents=text,
     )
-    return result.embeddings
+    return result.embeddings[0]  # the list contain a single element
 
 
 # Cosmos DB equivalent of similarity_search()
@@ -80,10 +80,14 @@ def similarity_search_cosmos_db(embed_query, vector_field='vector_field', top_k=
     database = client.get_database_client(azure_account_name)
     container = database.get_container_client(azure_container_name)
 
+    # Query to do a similarity search between the embed_query and the cosmos database entries.
+    # Get the text, the source (the file path) and take the 10 most relevant entries
     return list(container.query_items(
-        query=query,
-        enable_vector_search=True
-    ))
+        query='SELECT TOP 10 c.text, c.source,\
+            VectorDistance(c.vector_field,@embedding) AS SimilarityScore FROM c\
+            ORDER BY VectorDistance(c.vector_field,@embedding)',
+        parameters=[{"name": "@embedding", "value": embed_query.values}],
+        enable_cross_partition_query=True))
 
 
 def prepare_prompt(question, context):
@@ -109,39 +113,37 @@ def prepare_prompt(question, context):
 
 
 def generate_answer(prompt):
-    # Try multiple Gemini model names in order of preference
-    model_names = [
-        "gemini-2.5-flash-lite",
-    ]
 
-    for model_name in model_names:
-        try:
-            client = Client(
-                vertexai=True, project=vertexai_project_id, location=region)
-            print(f"Using chat model: {model_name}")
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-            )
-            return response.prompt_feedback
-        except Exception as e:
-            print(f"Model {model_name} not available: {e}")
-            continue
-
-    raise ValueError(
-        "No Gemini model available. Please check your Vertex AI model access.")
+    client = Client(
+        vertexai=True, project=vertexai_project_id, location=region)
+    print(f"Using chat model: {ai_model_final_prompt}")
+    response = client.models.generate_content(
+        model=ai_model_final_prompt,
+        contents=prompt,
+    )
+    print(response)
+    return "\n".join([a.text for a in response.parts])  # join the list of text values to have a single string
 
 
 # The entrypoint of the core logic, to be called by test.py
 def generate_ai_answer(user_prompt):
     embed_question = get_embedding(user_prompt)
-    print(embed_question)
+    print("Question as embeddings:")
+    print(embed_question.values[:100])
     sim_results = similarity_search_cosmos_db(embed_question)
-    context = [i['_source']['text'] for i in sim_results]
-    print(context)
+
+    print("Context extracted from similarity search")
+    for item in sim_results:
+        print("- [{0}] {1}".format(item['SimilarityScore'], item['text']))
+    context = [i['text'] for i in sim_results]
+
     prompt = prepare_prompt(user_prompt, context)
+    print("Last prompt with question and prompt")
     print(prompt)
-    return generate_answer(prompt)
+    result = generate_answer(prompt)
+    print("Final answer from the AI")
+    print(result)
+    return result
 
 
 def main():
@@ -168,7 +170,7 @@ def main():
 
         answer = generate_ai_answer(user_prompt)
         st.session_state.chat_history.append(
-            {"role": "system", "content": answer.content})
+            {"role": "system", "content": answer})
         for message in st.session_state.chat_history[-1:]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
