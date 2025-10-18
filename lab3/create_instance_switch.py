@@ -72,6 +72,12 @@ def delete_server(conn, server_name):
         return
     conn.compute.delete_server(server.id)
     print(f"Serveur '{server_name}' supprimé")
+    # release floating ip
+    ports = list(conn.network.ports(device_id=server.id))
+    for fip in conn.network.ips():
+        if fip.port_id and fip.port_id in [p.id for p in ports]:
+            conn.network.delete_ip(fip)
+            print(f"Floating IP {fip.floating_ip_address} released")
 
 
 # --- Programme principal ---
