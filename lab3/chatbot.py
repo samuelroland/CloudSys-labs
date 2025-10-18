@@ -1,13 +1,15 @@
 # Based on the app of Abir Chebbi (abir.chebbi@hesge.ch)
 # Modified for the Switch Engine+Azure Cosmos DB+Google Vertex AI
 # Helped by ChatGPT
-from azure.cosmos import CosmosClient, PartitionKey
-import boto3
+from google.genai import Client
+from google.oauth2 import service_account
+from azure.cosmos import CosmosClient
 import streamlit as st
-from langchain_aws import BedrockEmbeddings, ChatBedrock
-from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
-from langchain_core.prompts import PromptTemplate
 import configparser
+from langchain_core.prompts import PromptTemplate
+
+# same model as vectorise-store.py
+ai_model = "gemini-embedding-001"
 
 
 def load_config():
@@ -18,23 +20,11 @@ def load_config():
 
 config = load_config()
 
-aws_access_key_id = config.get('aws', 'aws_access_key_id')
-aws_secret_access_key = config.get('aws', 'aws_secret_access_key')
-region = config.get('aws', 'region')
-endpoint = config.get('opensearch', 'endpoint')
-index_name = config.get('opensearch', 'index_name')
+azure_account_name = config.get('azure', 'account_name')
+azure_container_name = config.get('azure', 'container_name')
+vertexai_project_id = config.get('vertexai', 'project_id')
 
-# Embeddings Client
-bedrock_client = boto3.client(service_name="bedrock-runtime",
-                              aws_access_key_id=aws_access_key_id,
-                              aws_secret_access_key=aws_secret_access_key, region_name=region)
-
-# Create a boto3 session for langchain_aws models
-boto3_session = boto3.Session(
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    region_name=region
-)
+region = 'us-central1'
 
 # configuring streamlit page settings
 st.set_page_config(
@@ -43,87 +33,37 @@ st.set_page_config(
     layout="centered"
 )
 
-
 # streamlit page title
 st.title("Chat with your lecture")
 
 
-# OpenSearch Client
-def ospensearch_client(endpoint):
-    session = boto3.Session(
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        region_name=region
-    )
-    awsauth = AWSV4SignerAuth(session.get_credentials(), region, 'aoss')
-    client = OpenSearch(
-        hosts=[{'host': endpoint, 'port': 443}],
-        http_auth=awsauth,
-        use_ssl=True,
-        verify_certs=True,
-        connection_class=RequestsHttpConnection,
-    )
-    return client
-
-
 # CosmoDB client
-def cosmosdb_client(endpoint, key, database_name, container_name):
-    client = CosmosClient(endpoint, key)
-    database = client.get_database_client(database_name)
-    container = database.get_container_client(container_name)
-    return container
+def get_cosmos_client():
+    cosmos_url = "https://{0}.documents.azure.com:443/".format(
+        azure_account_name)
+    # TODO: pass that as arguments ?
+    with open('azure-db-key.txt', 'r') as file:
+        key = file.read().rstrip()
+    return CosmosClient(cosmos_url, credential=key)
 
 
-def get_embedding(question, bedrock_client):
-    # Try multiple model IDs in order of preference (same as vectorization script)
-    model_ids = [
-        "amazon.titan-embed-text-v2:0",    # Latest version
-        "amazon.titan-embed-text-v1",      # Previous version
-        "cohere.embed-english-v3"          # Alternative
-    ]
+def get_embedding(text):
+    # the key is only useful when the gcloud auth login is not done
+    scopes = ['https://www.googleapis.com/auth/cloud-platform']
+    creds = service_account.Credentials.from_service_account_file(
+        "vertexai-service-account-key.json", scopes=scopes)
+    client = Client(vertexai=True, project=vertexai_project_id,
+                    location=region)
 
-    embeddings_model = None
-    for model_id in model_ids:
-        try:
-            embeddings_model = BedrockEmbeddings(
-                model_id=model_id,
-                region_name=region,
-                credentials_profile_name=None
-            )
-            # Set the boto3 session client
-            embeddings_model.client = boto3_session.client("bedrock-runtime")
-            print(f"Using embedding model: {model_id}")
-            break
-        except Exception as e:
-            print(f"Model {model_id} not available: {e}")
-            continue
-
-    if embeddings_model is None:
-        raise ValueError(
-            "No embedding model available. Please check your Bedrock model access.")
-
-    embedding = embeddings_model.embed_query(question)
-    return embedding
-
-
-def similarity_search(client, embed_query, index_name):
-    query_body = {
-        "size": 5,
-        "query": {
-            "knn": {
-                "vector_field": {
-                    "vector": embed_query,
-                    "k": 5
-                }
-            }
-        }
-    }
-    response = client.search(index=index_name, body=query_body)
-    return response['hits']['hits']
+    result = client.models.embed_content(
+        model=ai_model,
+        contents=text,
+    )
+    return result.embeddings
 
 
 # Cosmos DB equivalent of similarity_search()
-def similarity_search_cosmos_db(container, embed_query, vector_field='vector_field', top_k=5):
+def similarity_search_cosmos_db(embed_query, vector_field='vector_field', top_k=5):
     vector_query = {
         "vector": embed_query,
         "topK": top_k,
@@ -135,6 +75,10 @@ def similarity_search_cosmos_db(container, embed_query, vector_field='vector_fie
         "filter": "",
         "vectorSearch": vector_query
     }
+
+    client = get_cosmos_client()
+    database = client.get_database_client(azure_account_name)
+    container = database.get_container_client(azure_container_name)
 
     return list(container.query_items(
         query=query,
@@ -165,43 +109,42 @@ def prepare_prompt(question, context):
 
 
 def generate_answer(prompt):
-    # Try multiple Claude model IDs in order of preference
-    model_ids = [
-        # claude 4
-        # "anthropic.claude-4-0-20241022-v2:0",  # Latest Claude 4
-        # "anthropic.claude-4-0-20240620-v1:0",  # Previous Claude 4
-        # claude 3.5
-        # "anthropic.claude-3-5-sonnet-20241022-v2:0",  # Latest Claude 3.5 Sonnet
-        "anthropic.claude-3-5-sonnet-20240620-v1:0",  # Previous Claude 3.5 Sonnet
-        # "anthropic.claude-3-sonnet-20240229-v1:0",    # Claude 3 Sonnet
-        # "anthropic.claude-3-haiku-20240307-v1:0"      # Claude 3 Haiku (faster/cheaper)
+    # Try multiple Gemini model names in order of preference
+    model_names = [
+        "gemini-2.5-flash-lite",
     ]
 
-    for model_id in model_ids:
+    for model_name in model_names:
         try:
-            model = ChatBedrock(
-                model_id=model_id,
-                model_kwargs={"temperature": 0.1},
-                region_name=region,
-                credentials_profile_name=None
+            client = Client(
+                vertexai=True, project=vertexai_project_id, location=region)
+            print(f"Using chat model: {model_name}")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
             )
-            # Set the boto3 session for the model
-            model.client = boto3_session.client("bedrock-runtime")
-            print(f"Using chat model: {model_id}")
-            answer = model.invoke(prompt)
-            return answer
+            return response.prompt_feedback
         except Exception as e:
-            print(f"Model {model_id} not available: {e}")
+            print(f"Model {model_name} not available: {e}")
             continue
 
-    # If no model works, raise an error
     raise ValueError(
-        "No Claude model available. Please check your Bedrock model access.")
+        "No Gemini model available. Please check your Vertex AI model access.")
+
+
+# The entrypoint of the core logic, to be called by test.py
+def generate_ai_answer(user_prompt):
+    embed_question = get_embedding(user_prompt)
+    print(embed_question)
+    sim_results = similarity_search_cosmos_db(embed_question)
+    context = [i['_source']['text'] for i in sim_results]
+    print(context)
+    prompt = prepare_prompt(user_prompt, context)
+    print(prompt)
+    return generate_answer(prompt)
 
 
 def main():
-
-    oss_client = ospensearch_client(endpoint)
 
     # initialize chat session in streamlit if not already present
     if "chat_history" not in st.session_state:
@@ -223,14 +166,7 @@ def main():
         # Generate and display answer
         print(user_prompt)
 
-        embed_question = get_embedding(user_prompt, bedrock_client)
-        print(embed_question)
-        sim_results = similarity_search(oss_client, embed_question, index_name)
-        context = [i['_source']['text'] for i in sim_results]
-        print(context)
-        prompt = prepare_prompt(user_prompt, context)
-        print(prompt)
-        answer = generate_answer(prompt)
+        answer = generate_ai_answer(user_prompt)
         st.session_state.chat_history.append(
             {"role": "system", "content": answer.content})
         for message in st.session_state.chat_history[-1:]:

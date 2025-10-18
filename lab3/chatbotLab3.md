@@ -7,6 +7,7 @@ Using proprietary APIs of Cloud providers to develop a smart chatbot
 
 ## Set up environment:
 To access Switch Engine, add the `clouds.yaml` file to the switch folder.
+TODO: how to generate this file
 Also add the `switchengine-tsm-cloudsys.pem` key pair to the switch folder.
 These files will be used in the `create_instance_switch.py` script.
 
@@ -67,6 +68,7 @@ TODO: support injecting project_id ?
 
 ## Create switch Instance
 
+Make sure to fill the `config.ini` file !
 ```sh
 $ pip install openstacksdk
 $ python create_instance_switch.py 
