@@ -1,26 +1,6 @@
 import argparse
-import os.path
 from openstack import connection
 from openstack.config import OpenStackConfig
-
-# A very hacky way to copy file to a remote server
-# with a shell command containing their content in the command directly
-#
-# If the file is config.ini, the bash command is this
-# cat <<EOT > config.ini
-# <config.ini content is given here>
-# EOT
-def gen_bash_copy_files(files):
-    commands = ""
-    for file in files:
-        with open(file, 'r') as file:
-            content = file.read()
-        commands += f"""
-printf '%s' '{content}
-' > {file.name}
-"""
-    return commands
-
 
 IMAGE_NAME = "Ubuntu Jammy 22.04 (SWITCHengines)"
 FLAVOR_NAME = "m1.small"
@@ -29,12 +9,6 @@ SERVER_NAME = "groupd-labo1"
 KEYPAIR_NAME = "switchengine-tsm-cloudsys"
 PRIVATE_KEYPAIR_FILE = f"./switch/{KEYPAIR_NAME}.pem"
 CLOUDS_YAML = "./switch/clouds.yaml"
-CONFIG_INI_CONTENT = ''
-FILES_TO_UPLOAD = ["init.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "azure-db-key.txt", "vertexai-service-account-key.json"]
-FILES_COPY_CMDS = gen_bash_copy_files(FILES_TO_UPLOAD)
-# The script that runs when the VM has been created, which serves as a way to install dependencies and deploy our app
-# Most of the content is written in init.sh for ease of editing
-VM_SETUP_SCRIPT = "#!/bin/bash\ncurl -d 'starting script' ntfy.sh/superchatbot && cd $HOME && mkdir deploy && cd deploy && mkdir switch\nbash init.sh\n{0}\nPATH=$PATH:$HOME/.local/bin streamlit run chatbot.py &> /tmp/chatbotlog.txt".format(FILES_COPY_CMDS)
 
 def list_images_dispo(conn):
     print("Available Server:")
@@ -53,12 +27,6 @@ def create_server(conn):
         with open(PRIVATE_KEYPAIR_FILE, "w") as f:
             f.write(keypair.private_key)
 
-    # Make sure all FILES_TO_UPLOAD do exist
-    for file in FILES_TO_UPLOAD:
-        if not os.path.isfile(file):
-            print(f"Error: file {file} should have been manually created to be uploaded !")
-            return
-
     # Finally create the server and run the VM_SETUP_SCRIPT
     server = conn.compute.create_server(
         name=SERVER_NAME,
@@ -66,7 +34,6 @@ def create_server(conn):
         flavor_id=flavor.id,
         networks=[{"uuid": network.id}],
         key_name=keypair.name,
-        userdata=VM_SETUP_SCRIPT
     )
     server = conn.compute.wait_for_server(server)
     print(f"VM '{SERVER_NAME}' created.")
@@ -91,7 +58,7 @@ def create_server(conn):
     # Link Floating IP
     conn.network.update_ip(floating_ip, port_id=port_id)
 
-    print(f"You can login as ssh with\nssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}\nYou can also watch deployments logs under /tmp/chatbotlog.txt")
+    print(f"You can login with SSH in a minute with\nssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}\nYou can also watch deployments logs under /tmp/chatbotlog.txt")
 
     print(f"Chatbot started to deploy...\nPlease open http://{floating_ip.floating_ip_address}:8501 in your Web browser and wait a few minutes...")
 

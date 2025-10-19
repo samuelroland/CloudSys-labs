@@ -6,3 +6,5 @@ azure-mgmt-authorization
 google-genai
 streamlit
 langchain-core
+paramiko
+scp

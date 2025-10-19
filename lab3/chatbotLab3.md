@@ -16,22 +16,27 @@ Based on the code provided for the previous lab, we refactored the scripts for t
 ## Prerequisites
 This assumes you have Python installed and you have access to the 3 following clouds: Google Cloud, Microsoft Azure and Switch Engines.
 
-1. Install Python dependencies
+1. **Install Python dependencies**
     ```sh
     pip install -r requirements.txt
     ```
-1. For Azure: [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
-1. Setup the Google Cloud environment
+1. **For Azure**: [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
+1. **Setup the Google Cloud environment**
     1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
     1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
-    1. 
-![img](images/iam-add-key.png)
-![img](images/iam-dl-key.png)
-![img](images/iam-permission-vertex-ai.png)
-![img](images/iam-service-account-creation.png)
-![img](images/iam-service-account-ready.png)
+    1. You have to create a Service account, go in IAM, and create one like on this picture  
+    ![img](images/iam-service-account-creation.png)
+    1. Add **Vertex AI User** role and Continue with defaults.  
+    <img src="images/iam-permission-vertex-ai.png" height="400" />
+    1. Now you have a service account, click on it  
+    ![img](images/iam-service-account-ready.png)
+    1. Go in the Keys tab to **Add key**  
+    <img src="images/iam-add-key.png" height="350" />
+    1. Download as JSON format  
+    <img src="images/iam-dl-key.png" height="300" />
+    1. Place this JSON file under a file named `vertexai-service-account-key.json` in the current folder
 
-1. Setup the Switch Engines environment
+1. **Setup the Switch Engines environment**
     1. [Go login on Switch Engines panel](https://engines.switch.ch/) to get your generated API password
     1. **Make sure you have the LS (Lausanne)** region chosen not the ZH one...
     1. [Go into the API access page to get your `clouds.yaml`](https://engines.switch.ch/horizon/project/api_access/)
@@ -126,6 +131,12 @@ Now an Ubuntu 22.04 instance of flavour `m1.small` should be running and accessi
 
 ![switch-vm-running.png](images/switch-vm-running.png)
 
+## Deploy the chatbot on the VM
+The VM is ready to host the chatbot. Get the hostname showed previously and run it like that
+```sh
+python deploy.py --host 86.119.30.166
+```
+
 ## Accessing the application online
 You can finally open your browser, open the public IP of the VM with TODO
 
@@ -141,7 +152,6 @@ Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
 Resource group 'groupd-chatbot-deploy' deleted successfully.
 ```
 
-TODO
 You can delete the Switch VM and associated resource, with this command. Make sure to give the correct VM name.
 ```sh
 > python create_instance_switch.py --delete-vm groupd-labo1
