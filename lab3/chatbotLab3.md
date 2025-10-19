@@ -103,6 +103,7 @@ And run the script `vectorise-store.py` which is an adaptation of the provided s
 ```sh
 python vectorise-store.py --local_path s3-download
 ```
+TODO: est ce que gemini-embedding-001 est dispo? Ne semble pas etre le cas
 
 ## Accessing the application locally
 To make sure everything is working, there is a little `test.py` script that allows to quickly test the bot without open the streamlit chat. The message sent is hard-coded and can be changed if needed.
