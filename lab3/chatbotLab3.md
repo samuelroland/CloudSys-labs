@@ -151,6 +151,8 @@ CHATBOT HAS BEEN DEPLOYED...
 Please open http://86.119.31.138:8501 in your Web browser !
 ```
 
+It installs Python, Pip, install the Pip dependencies, and start the chatbot in background.
+
 You can finally open the link printed on the last line.
 
 ![final-chatbot-working.png](imgs/final-chatbot-working.png)

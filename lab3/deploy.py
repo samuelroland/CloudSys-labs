@@ -1,5 +1,5 @@
 # This script is used to deploy the local files of the current folder into the VM
-# and execute the 
+# and execute the final commands in deploy.sh
 import argparse
 from scp import SCPClient
 from paramiko import SSHClient, AutoAddPolicy
