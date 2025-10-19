@@ -11,7 +11,7 @@ Using proprietary APIs of Cloud providers from a single online chatbot. Based on
 
 <img src="images/shema2.png" width="100%" />
 
-Based on the code provided for the previous lab, we refactored the scripts for the new infrastructure, keeping mostly the same scripts separation strategy. The chatbot has the same strategy as the previous one but is using the new services. For ease of execution, we have chosen a few hard-coded values inside the scripts directly. They can be easily changed by editing the scripts directly.
+Based on the code provided for the previous lab, we refactored the scripts for the new infrastructure, keeping mostly the same scripts separation strategy. The chatbot has the same strategy as the previous one but is using the new services. For ease of execution, we have chosen a few hard-coded values inside `config.ini` to avoid choosing and giving names. All values that cannot be chosen in advance (such as the public IP or the folder where you want to download PDFs), are provided via CLI flags.
 
 ## Prerequisites
 This assumes you have Python installed and you have access to the 3 following clouds: Google Cloud, Microsoft Azure and Switch Engines.
@@ -48,14 +48,14 @@ This assumes you have Python installed and you have access to the 3 following cl
     1. Change your `default` security group to accept port 22 (SSH) and 8501 (the chatbot).
         ![switch-engine-default-security-group-changes.png](imgs/switch-engine-default-security-group-changes.png)
 
-
 ## S3-compatible container creation on Switch engines
 We know this wasn't 100% recommended by John White but we tried and it works.
 ```sh
-python create-S3-and-put-docs_switch.py --container_name groupd --pdf_path ../../../TSM_CloudSys-2024-25.pdf
+python create-S3-and-put-docs_switch.py --pdf_path ../../../TSM_CloudSys-2024-25.pdf
 ```
-With this script, we create container in object store, upload an pdf. We can also download this pdf, list 
-object storage and contents and delete a dedicated container.
+With this script, we create container in object store, upload an pdf. We can also download this pdf, list object storage and contents and delete a dedicated container.
+
+TODO: how to delete the S3 container ? I see this is done immediately but should we delete it right away or should the vectorise-store download the file and we delete the container at the end ?
 
 ## Vector database creation on Azure Cosmos DB service
 We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB).
@@ -81,9 +81,7 @@ We want to download the files in S3 again, ask Google Vertex AI to generate embe
 
 Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
-> python vectorise-store.py --account_name groupdchatbotd1234 --container_name "groupd-vector-container-cosmos" --local_path bucketcontent
-TODO add --bucket_name in example
-TODO: support injecting project_id ?
+> python vectorise-store.py --local_path bucketcontent
 ```
 
 ## Accessing the application locally
@@ -177,4 +175,3 @@ Floating IP 86.119.31.63 released
 
 The Google Cloud project `chatbot` could be deleted manually.
 
-TODO: how to delete the S3 bucket ? I see this is done immediately but should we delete it right away or should the vectorise-store download the file and we delete the container at the end ?

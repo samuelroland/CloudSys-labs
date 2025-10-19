@@ -2,6 +2,7 @@ import os
 import argparse
 from openstack import connection
 from openstack.config import OpenStackConfig
+import configparser
 
 def list_container(conn):
     containers = list(conn.object_store.containers())
@@ -19,7 +20,7 @@ def list_container(conn):
 def get_container_public_url(conn, container_name):
     # Récupérer l'endpoint public du service object-store (Swift)
     endpoint = conn.session.get_endpoint(service_type='object-store', interface='public')
-    
+
     # Construire l'URL complète du container
     # L'account/project ID est généralement le current_project_id du token
     account = f"AUTH_{conn.current_project_id}"
@@ -27,7 +28,7 @@ def get_container_public_url(conn, container_name):
     return public_url
 
 def upload_pdfs(conn, container_name, pdf_path):
-	# Upload PDF file
+    # Upload PDF file
     if os.path.isfile(pdf_path):
         files = [pdf_path]
     elif os.path.isdir(pdf_path):
@@ -92,38 +93,47 @@ def delete_container(conn, container_name):
         # Delete container
         conn.object_store.delete_container(container.name)
         print(f"Container '{container_name}' deleted successfully.")
-        
+
     except Exception as e:
         print(f"Error deleting container '{container_name}': {e}")
-                
-def main(container_name, pdf_path):
+
+
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config
+
+
+config = load_config()
+
+S3_CONTAINER_NAME = config.get('switch', 's3_container_name')
+
+def main(pdf_path):
     # Load speciif config
     config = OpenStackConfig(config_files=["./switch/clouds.yaml"])
     cloud = config.get_one("engines")
 
     # Create connection
     conn = connection.Connection(config=cloud)
-    
+
     # Create container
-    create_container(conn, container_name)
-    
+    create_container(conn, S3_CONTAINER_NAME)
+
     # Just for check, list containers
     list_container(conn)
-    
-    # Upload PDF file
-    upload_pdfs(conn, container_name, pdf_path)
 
-    
+    # Upload PDF file
+    upload_pdfs(conn, S3_CONTAINER_NAME, pdf_path)
+
     # Download PDF
-    download_pdfs(conn, container_name, "./mydir")
-    
+    download_pdfs(conn, S3_CONTAINER_NAME, "./mydir")
+
     # Delete container
-    delete_container(conn, container_name) 
+    delete_container(conn, S3_CONTAINER_NAME) 
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Upload PDF files to an OpenStack Swift container")
-    parser.add_argument("--container_name", help="The name of the Swift container")
     parser.add_argument("--pdf_path", help="Path to a PDF file or directory of PDF files")
     args = parser.parse_args()
-    main(args.container_name, args.pdf_path)
-
+    main(args.pdf_path)

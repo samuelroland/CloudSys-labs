@@ -161,8 +161,20 @@ def store_embeddings_cosmos(embeddings, texts, meta_data_list, account_name, dat
     return f"{len(documents)} documents upserted into Cosmos DB"
 
 
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config
+
+
+config = load_config()
+
+REGION = config.get('azure', 'region')
+ACCOUNT_NAME = config.get('azure', 'account_name')
+AZURE_CONTAINER_NAME = config.get('azure', 'container_name')
+
 # main
-def main(bucket_name, account_name, local_path, container_name):
+def main(local_path):
 
     # TODO enable that again
     # download_documents(bucket_name, local_path)
@@ -171,7 +183,7 @@ def main(bucket_name, account_name, local_path, container_name):
     print('Start chunking')
     chunks = split_text(docs, 1000, 100)
     print(chunks[1])
-    create_cosmos_db_container(container_name, account_name)
+    create_cosmos_db_container(AZURE_CONTAINER_NAME, ACCOUNT_NAME)
     print('Start vectorising')
     embeddings = generate_embeddings(chunks)
     print(embeddings[1])
@@ -187,9 +199,9 @@ def main(bucket_name, account_name, local_path, container_name):
             embeddings,
             texts,
             meta_data,
-            account_name,
-            database_name=account_name,
-            container_name=container_name,
+            ACCOUNT_NAME,
+            database_name=ACCOUNT_NAME,
+            container_name=AZURE_CONTAINER_NAME,
         )
         print('End storing - Success!')
     except Exception as e:
@@ -199,13 +211,6 @@ def main(bucket_name, account_name, local_path, container_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Process PDF documents and store their embeddings.")
-    parser.add_argument(
-        "--bucket_name", help="The S3 bucket name where documents are stored")
-    parser.add_argument(
-        "--account_name", help="The account_name of Azure Cosmos Database")
-    parser.add_argument(
-        "--container_name", help="The name of the container to create inside the Azure Cosmos Database")
     parser.add_argument("--local_path", help="local path")
     args = parser.parse_args()
-    main(args.bucket_name, args.account_name,
-         args.local_path, args.container_name)
+    main(args.local_path)
