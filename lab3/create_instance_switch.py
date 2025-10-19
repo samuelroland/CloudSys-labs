@@ -1,14 +1,23 @@
 import argparse
 from openstack import connection
 from openstack.config import OpenStackConfig
+import configparser
 
-IMAGE_NAME = "Ubuntu Jammy 22.04 (SWITCHengines)"
-FLAVOR_NAME = "m1.small"
-NETWORK_NAME = "private"
-SERVER_NAME = "groupd-labo1"
-KEYPAIR_NAME = "switchengine-tsm-cloudsys"
-PRIVATE_KEYPAIR_FILE = f"./switch/{KEYPAIR_NAME}.pem"
-CLOUDS_YAML = "./switch/clouds.yaml"
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config
+
+
+config = load_config()
+
+IMAGE_NAME = config.get('switch', 'image_name')
+FLAVOR_NAME = config.get('switch', 'flavor_name')
+NETWORK_NAME = config.get('switch', 'network_name')
+SERVER_NAME = config.get('switch', 'server_name')
+KEYPAIR_NAME = config.get('switch', 'keypair_name')
+PRIVATE_KEYPAIR_FILE = config.get('switch', 'private_keypair_file')
+CLOUDS_YAML = config.get('switch', 'clouds_yaml')
 
 def list_images_dispo(conn):
     print("Available Server:")

@@ -28,10 +28,10 @@ def load_config():
 config = load_config()
 
 # Google Vertex AI Client
-vertexai_region = config.get('vertexai', 'region')
-project_id = config.get('vertexai', 'project_id')
-ai_model_embeddings = config.get('vertexai', 'ai_model_embeddings')
-ai_model_final_prompt = config.get('vertexai', 'ai_model_final_prompt')
+VERTEXAI_REGION = config.get('vertexai', 'region')
+PROJECT_ID = config.get('vertexai', 'project_id')
+AI_MODEL_EMBEDDINGS = config.get('vertexai', 'ai_model_embeddings')
+AI_MODEL_FINAL_PROMPT = config.get('vertexai', 'ai_model_final_prompt')
 
 ai_vectors_dimensions = 768  # kinda arbitrary value
 
@@ -111,12 +111,12 @@ def generate_embeddings(chunks):
     embeddings = []
     batch_size = 100
     client = Client(
-        vertexai=True, project=project_id, location=vertexai_region)
+        vertexai=True, project=PROJECT_ID, location=VERTEXAI_REGION)
 
     for i in range(0, len(chunks_list), batch_size):
         batch = chunks_list[i:i+batch_size]
         batch_embeddings = client.models.embed_content(
-            model=ai_model_embeddings,
+            model=AI_MODEL_EMBEDDINGS,
             contents=batch,
             # config=EmbedContentConfig(
             #     task_type="RETRIEVAL_DOCUMENT",  # Optional

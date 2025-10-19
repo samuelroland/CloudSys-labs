@@ -16,15 +16,13 @@ def load_config():
 
 config = load_config()
 
-azure_account_name = config.get('azure', 'account_name')
-azure_container_name = config.get('azure', 'container_name')
-vertexai_project_id = config.get('vertexai', 'project_id')
+AZURE_ACCOUNT_NAME = config.get('azure', 'account_name')
+AZURE_CONTAINER_NAME = config.get('azure', 'container_name')
 
-# same model as vectorise-store.py
-ai_model_embeddings = config.get('vertexai', 'ai_model_embeddings')
-ai_model_final_prompt = config.get('vertexai', 'ai_model_final_prompt')
-
-vertexai_region = config.get('vertexai', 'region')
+VERTEXAI_PROJECT_ID = config.get('vertexai', 'project_id')
+AI_MODEL_EMBEDDINGS = config.get('vertexai', 'ai_model_embeddings')
+AI_MODEL_FINAL_PROMPT = config.get('vertexai', 'ai_model_final_prompt')
+VERTEXAI_REGION = config.get('vertexai', 'region')
 
 # configuring streamlit page settings
 st.set_page_config(
@@ -40,7 +38,7 @@ st.title("Chat with your lecture")
 # CosmoDB client
 def get_cosmos_client():
     cosmos_url = "https://{0}.documents.azure.com:443/".format(
-        azure_account_name)
+        AZURE_ACCOUNT_NAME)
     with open('azure-db-key.txt', 'r') as file:
         key = file.read().rstrip()
     return CosmosClient(cosmos_url, credential=key)
@@ -50,14 +48,14 @@ def get_vertex_ai_client():
     scopes = ['https://www.googleapis.com/auth/cloud-platform']
     creds = service_account.Credentials.from_service_account_file(
         "vertexai-service-account-key.json", scopes=scopes)
-    return Client(vertexai=True, project=vertexai_project_id, location=vertexai_region, credentials=creds)
+    return Client(vertexai=True, project=VERTEXAI_PROJECT_ID, location=VERTEXAI_REGION, credentials=creds)
 
 
 def get_embedding(text):
     client = get_vertex_ai_client()
 
     result = client.models.embed_content(
-        model=ai_model_embeddings,
+        model=AI_MODEL_EMBEDDINGS,
         contents=text,
     )
     return result.embeddings[0]  # the list contain a single element
@@ -66,8 +64,8 @@ def get_embedding(text):
 # Cosmos DB equivalent of similarity_search()
 def similarity_search_cosmos_db(embed_query, vector_field='vector_field', top_k=5):
     client = get_cosmos_client()
-    database = client.get_database_client(azure_account_name)
-    container = database.get_container_client(azure_container_name)
+    database = client.get_database_client(AZURE_ACCOUNT_NAME)
+    container = database.get_container_client(AZURE_CONTAINER_NAME)
 
     # Query to do a similarity search between the embed_query and the cosmos database entries.
     # Get the text, the source (the file path) and take the 10 most relevant entries
@@ -103,9 +101,9 @@ def prepare_prompt(question, context):
 
 def generate_answer(prompt):
     client = get_vertex_ai_client()
-    print(f"Using chat model: {ai_model_final_prompt}")
+    print(f"Using chat model: {AI_MODEL_FINAL_PROMPT}")
     response = client.models.generate_content(
-        model=ai_model_final_prompt,
+        model=AI_MODEL_FINAL_PROMPT,
         contents=prompt,
     )
     print(response)

@@ -4,8 +4,19 @@ import argparse
 from scp import SCPClient
 from paramiko import SSHClient, AutoAddPolicy
 import os.path
-from create_instance_switch import PRIVATE_KEYPAIR_FILE, CLOUDS_YAML
 
+import configparser
+
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config
+
+
+config = load_config()
+
+PRIVATE_KEYPAIR_FILE = config.get('switch', 'private_keypair_file')
+CLOUDS_YAML = config.get('switch', 'clouds_yaml')
 FILES_TO_UPLOAD = ["deploy.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "azure-db-key.txt", "vertexai-service-account-key.json"]
 DEPLOY_ROOT_FOLDER = '/home/ubuntu'
 
