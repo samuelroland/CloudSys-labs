@@ -26,15 +26,19 @@ This assumes you have Python installed and you have access to the 3 following cl
     1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
     1. You have to create a Service account, go in IAM, and create one like on this picture  
     ![img](images/iam-service-account-creation.png)
+
     1. Add **Vertex AI User** role and Continue with defaults.  
     <img src="images/iam-permission-vertex-ai.png" height="400" />  
 
     1. Now you have a service account, click on it  
     <img src="images/iam-service-account-ready.png" height="400" />  
+
     1. Go in the Keys tab to **Add key** > Create new key  
-    <img src="images/iam-add-key.png" height="350" />  
+    <img src="images/iam-add-key.png" height="350" />
+
     1. Download as JSON format  
-    <img src="images/iam-dl-key.png" height="300" />  
+    <img src="images/iam-dl-key.png" height="300" />
+
     1. Place this JSON file under a file named `vertexai-service-account-key.json` in the current folder
 
 1. **Setup the Switch Engines environment**
