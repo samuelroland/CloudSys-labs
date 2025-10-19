@@ -3,8 +3,10 @@ azure-cosmos
 azure-identity
 azure-mgmt-resource
 azure-mgmt-authorization
+azure-mgmt-cosmosdb
 google-genai
 streamlit
 langchain-core
 paramiko
 scp
+

@@ -27,26 +27,26 @@ This assumes you have Python installed and you have access to the 3 following cl
     1. You have to create a Service account, go in IAM, and create one like on this picture  
     ![img](images/iam-service-account-creation.png)
     1. Add **Vertex AI User** role and Continue with defaults.  
-    <img src="images/iam-permission-vertex-ai.png" height="400" />
+    <img src="images/iam-permission-vertex-ai.png" height="400" />  
     1. Now you have a service account, click on it  
-    ![img](images/iam-service-account-ready.png)
-    1. Go in the Keys tab to **Add key**  
-    <img src="images/iam-add-key.png" height="350" />
+    <img src="images/iam-service-account-ready.png" height="400" />  
+    1. Go in the Keys tab to **Add key** > Create new key  
+    <img src="images/iam-add-key.png" height="350" />  
     1. Download as JSON format  
-    <img src="images/iam-dl-key.png" height="300" />
+    <img src="images/iam-dl-key.png" height="300" />  
     1. Place this JSON file under a file named `vertexai-service-account-key.json` in the current folder
 
 1. **Setup the Switch Engines environment**
     1. [Go login on Switch Engines panel](https://engines.switch.ch/) to get your generated API password
     1. **Make sure you have the LS (Lausanne)** region chosen not the ZH one...
     1. [Go into the API access page to get your `clouds.yaml`](https://engines.switch.ch/horizon/project/api_access/)
-        ![switch-engines-clouds-yaml-button.png](imgs/switch-engines-clouds-yaml-button.png)
+        ![switch-engines-clouds-yaml-button.png](images/switch-engines-clouds-yaml-button.png)  
 
     1. Move this file under a `switch` subfolder in this directory
     1. Edit it to add your password
     1. An SSH keypair will be created automatically and downloaded under `switch/switchengine-tsm-cloudsys.pem` if it doesn't already exist.
     1. Change your `default` security group to accept port 22 (SSH) and 8501 (the chatbot).
-        ![switch-engine-default-security-group-changes.png](imgs/switch-engine-default-security-group-changes.png)
+        ![switch-engine-default-security-group-changes.png](images/switch-engine-default-security-group-changes.png)
 
 ## S3-compatible container creation on Switch engines
 We know this wasn't 100% recommended by John White but we tried and it works.
@@ -55,16 +55,23 @@ python create-S3-and-put-docs_switch.py --pdf_path ../../../TSM_CloudSys-2024-25
 ```
 With this script, we create container in object store, upload an pdf. We can also download this pdf, list object storage and contents and delete a dedicated container.
 
-TODO: how to delete the S3 container ? I see this is done immediately but should we delete it right away or should the vectorise-store download the file and we delete the container at the end ?
-
 ## Vector database creation on Azure Cosmos DB service
 We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB).
 
-Note: the account name is also used as the database name.
+Note: the account name is also used as the database name. This name must be unique and can only 
 <!-- TODO: should we change that ?? I didn't understand this was different at start so I mixed the 2 variables in code. -->
 
-1. Then you can run
-    ```sh
+1. Activate the Cosmos DB service for your Azure account
+ ```sh
+az provider register --namespace Microsoft.DocumentDB
+```
+It may take 1–2 minutes to complete. You can check the registration status with the command:
+ ```sh
+az provider show --namespace Microsoft.DocumentDB --query "registrationState"
+``` 
+The command should return `Registered`
+2. Then you can run
+    ```console
     > python setup-azure.py
     Provisioned resource group groupd-chatbot-deploy
     Created Cosmos DB account: groupdchatbotd1234
@@ -79,9 +86,16 @@ Note: the account name is also used as the database name.
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in a database in Cosmos DB.
 
-Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
+First download the pdf file from S3:
+```console
+$ python manage-S3_switch.py --download
+Download TSM_CloudSys-2024-25.pdf in ./s3-download/TSM_CloudSys-2024-25.pdf...
+TSM_CloudSys-2024-25.pdf downloaded successfully.
+```
+
+And run the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
-> python vectorise-store.py --local_path bucketcontent
+python vectorise-store.py --local_path s3-download/TSM_CloudSys-2024-25.pdf
 ```
 
 ## Accessing the application locally
@@ -100,21 +114,10 @@ which should open your browser with a fully working bot. You can already ask que
 
 ## Create the instance on Switch Engines
 
-Make sure to fill the `config.ini` file !
-
-
-```sh
-$ pip install openstacksdk
-$ python create_instance_switch.py 
-Create Server:
-ssh -i ./switch/switchengine-tsm-cloudsys.pem ubuntu@2001:620:5ca1:2f0:f816:3eff:feae:87f8
-List Servers:
-groupd-labo1 - ACTIVE - 78f67707-26ab-4b57-8d6c-81c004df1853
-```
-
-These files will be used in the `create_instance_switch.py` script, which you can simply run with
+Make sure to fill the `config.ini` file !  
+These files will be used in the `manage_instance_switch.py` script, which you can simply run with
 ```console
-$ python create_instance_switch.py
+$ python manage_instance_switch.py --create
 List Servers:
 Create Server:
 
@@ -155,24 +158,31 @@ It installs Python, Pip, install the Pip dependencies, and start the chatbot in 
 
 You can finally open the link printed on the last line.
 
-![final-chatbot-working.png](imgs/final-chatbot-working.png)
+![final-chatbot-working.png](images/final-chatbot-working.png)
 
 ## Delete the infrastructure
 
 At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
-```sh
+```console
 > python delete-azure.py
 Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
 Resource group 'groupd-chatbot-deploy' deleted successfully.
 ```
 
 You can delete the Switch VM and associated resource, with this command. Make sure to give the correct VM name.
-```sh
-> python create_instance_switch.py --delete-vm groupd-labo1
+```console
+> python manage_instance_switch.py --delete-vm groupd-labo1
 List Servers:
 groupd-labo1 - ACTIVE - fcef1b69-83a8-4173-a399-8dcbd3758bb3
 Server 'groupd-labo1' deleted
 Floating IP 86.119.31.63 released
+```
+
+You can delete the S3 from Switch engine
+```console
+> python manage-S3_switch.py --delete
+Deleted object: TSM_CloudSys-2024-25.pdf
+Container 'groupd' deleted successfully.
 ```
 
 The Google Cloud project `chatbot` could be deleted manually.

@@ -108,7 +108,7 @@ config = load_config()
 
 S3_CONTAINER_NAME = config.get('switch', 's3_container_name')
 
-def main(pdf_path):
+def main(args):
     # Load speciif config
     config = OpenStackConfig(config_files=["./switch/clouds.yaml"])
     cloud = config.get_one("engines")
@@ -116,24 +116,25 @@ def main(pdf_path):
     # Create connection
     conn = connection.Connection(config=cloud)
 
-    # Create container
-    create_container(conn, S3_CONTAINER_NAME)
-
-    # Just for check, list containers
-    list_container(conn)
-
-    # Upload PDF file
-    upload_pdfs(conn, S3_CONTAINER_NAME, pdf_path)
-
-    # Download PDF
-    download_pdfs(conn, S3_CONTAINER_NAME, "./mydir")
-
-    # Delete container
-    delete_container(conn, S3_CONTAINER_NAME) 
-
+    if args.pdf_path:
+        # Create container + upload + list
+        create_container(conn, S3_CONTAINER_NAME)
+        upload_pdfs(conn, S3_CONTAINER_NAME, args.pdf_path)
+        list_container(conn)
+    elif args.list:
+        list_container(conn)
+    elif args.download:
+        download_pdfs(conn, S3_CONTAINER_NAME, "./s3-download")
+    elif args.delete:
+        delete_container(conn, S3_CONTAINER_NAME)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Upload PDF files to an OpenStack Swift container")
-    parser.add_argument("--pdf_path", help="Path to a PDF file or directory of PDF files")
+    parser = argparse.ArgumentParser(description="Manage OpenStack Swift containers and PDF files")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--pdf_path", help="Path to a PDF file or directory of PDF files (create/upload)")
+    group.add_argument("--download", action="store_true", help="Download pdf from S3 container")
+    group.add_argument("--list", action="store_true", help="List all containers")
+    group.add_argument("--delete", action="store_true", help="Delete the container")
     args = parser.parse_args()
-    main(args.pdf_path)
+    main(args)
+    

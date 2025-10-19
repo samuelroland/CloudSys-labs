@@ -93,8 +93,12 @@ def delete_server(conn, server_name):
 if __name__ == "__main__":
     # parse arg
     parser = argparse.ArgumentParser(description="Manage switch engine VM")
-    parser.add_argument("--delete-vm", type=str, help="VM id to delete")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--list", action="store_true", help="List all VMs")
+    group.add_argument("--create", action="store_true", help="Create a new VM")
+    group.add_argument("--delete-vm", type=str, metavar="VM_NAME", help="Delete the VM by id or name")
     args = parser.parse_args()
+
     # Load specific config
     config = OpenStackConfig(config_files=[CLOUDS_YAML])
     cloud = config.get_one("engines")
@@ -102,10 +106,12 @@ if __name__ == "__main__":
     # Create connection
     conn = connection.Connection(config=cloud)
 
-    list_servers(conn)
     # list_images_dispo(conn)
 
-    if args.delete_vm:
-        delete_server(conn, args.delete_vm)
-    else:
+    # Execute based on argument
+    if args.list:
+        list_servers(conn)
+    elif args.create:
         create_server(conn)
+    elif args.delete_vm:
+        delete_server(conn, args.delete_vm)

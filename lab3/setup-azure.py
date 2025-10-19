@@ -81,7 +81,7 @@ def create_cosmos_db():
 
     result = async_create.result()
     print(f"Created Cosmos DB account: {result.name}")
-    print(result)
+    #print(result)
 
 
 create_resource_group(RESOURCE_GROUP_NAME, REGION)
