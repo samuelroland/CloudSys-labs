@@ -10,6 +10,8 @@ from azure.mgmt.cosmosdb.models import Capability
 from azure.mgmt.resource import SubscriptionClient
 from azure.mgmt.resource import ResourceManagementClient
 
+import configparser
+
 from azure.mgmt.cosmosdb.models import (
     DatabaseAccountCreateUpdateParameters,
     Location,
@@ -49,8 +51,8 @@ def create_cosmos_db():
 
     # Create the Cosmos DB account
     create_params = DatabaseAccountCreateUpdateParameters(
-        location=location,
-        locations=[Location(location_name=location)],
+        location=region,
+        locations=[Location(location_name=region)],
         kind="GlobalDocumentDB",
         capabilities=capabilities,
         consistency_policy=ConsistencyPolicy(
@@ -69,10 +71,18 @@ def create_cosmos_db():
     print(result)
 
 
-location = "switzerlandnorth"  # the region
-subscription_id = get_subscription_id()
-account_name = "groupdchatbotd1234"
-resource_group_name = "groupd-chatbot-deploy"
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    return config
 
-create_resource_group(resource_group_name, location)
+
+config = load_config()
+
+region = config.get('azure', 'region')
+subscription_id = get_subscription_id()
+account_name = config.get('azure', 'account_name')
+resource_group_name = config.get('azure', 'resource_group_name')
+
+create_resource_group(resource_group_name, region)
 create_cosmos_db()

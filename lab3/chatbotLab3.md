@@ -1,7 +1,7 @@
 # Chatbot lab
 
 ## Goal
-Using proprietary APIs of Cloud providers used from a single chatbot online. Based on the slides schemas, we updated the view with the 2 steps.
+Using proprietary APIs of Cloud providers from a single online chatbot. Based on the slides schemas, we updated the 2 architecture diagrams.
 
 **First step**: Setup an S3 bucket on OpenStack, be able to download documents, send them to Google Vertex AI to get their embeddings equivalent. Then, we want to store these floats vectors into an Azure Cosmos DB database.
 
@@ -60,10 +60,10 @@ object storage and contents and delete a dedicated container.
 ## Vector database creation on Azure Cosmos DB service
 We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB).
 
-Note: the account name is the same as the database name.
-<!-- TODO: should we change that ?? I didn't understand that at start so I mixed the 2 variables in code. -->
+Note: the account name is also used as the database name.
+<!-- TODO: should we change that ?? I didn't understand this was different at start so I mixed the 2 variables in code. -->
 
-1. Then you can run the Python script that will 
+1. Then you can run
     ```sh
     > python setup-azure.py
     Provisioned resource group groupd-chatbot-deploy
@@ -78,8 +78,6 @@ Note: the account name is the same as the database name.
 
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in a database in Cosmos DB.
-
-todo: even if not compatible with azure-cli ??
 
 Just the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
@@ -105,6 +103,8 @@ which should open your browser with a fully working bot. You can already ask que
 ## Create the instance on Switch Engines
 
 Make sure to fill the `config.ini` file !
+
+
 ```sh
 $ pip install openstacksdk
 $ python create_instance_switch.py 
@@ -136,10 +136,9 @@ $ python deploy.py --host 86.119.31.138
 
 Uploading current folder into the VM
 Starting deploy.sh on the VM
-{"id":"mOiwLAWGZihG","time":1760893038,"expires":1760936238,"event":"message","topic":"superchatbot","message":"starting running the deploy.sh"}
+
 Hit:1 http://ch.archive.ubuntu.com/ubuntu jammy InRelease
 Get:2 http://ch.archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
-
 ...
 Defaulting to user installation because normal site-packages is not writeable
 Collecting openstacksdk
@@ -154,15 +153,13 @@ CHATBOT HAS BEEN DEPLOYED...
 Please open http://86.119.31.138:8501 in your Web browser !
 ```
 
-## Accessing the application online
-You can finally open your browser, open the public IP of the VM with TODO
+You can finally open the link printed on the last line.
 
 ![final-chatbot-working.png](imgs/final-chatbot-working.png)
 
-
 ## Delete the infrastructure
 
-Note: At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
+At the end of the lab, when you need to delete the Azure infrastructure, run this script (this can take several minutes to delete the resource group)
 ```sh
 > python delete-azure.py
 Cosmos DB account 'groupdchatbotdb1234' deleted successfully.
@@ -177,3 +174,7 @@ groupd-labo1 - ACTIVE - fcef1b69-83a8-4173-a399-8dcbd3758bb3
 Server 'groupd-labo1' deleted
 Floating IP 86.119.31.63 released
 ```
+
+The Google Cloud project `chatbot` could be deleted manually.
+
+TODO: how to delete the S3 bucket ? I see this is done immediately but should we delete it right away or should the vectorise-store download the file and we delete the container at the end ?

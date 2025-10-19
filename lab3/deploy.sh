@@ -1,10 +1,11 @@
 #!/bin/bash
 # Last deployment commands expecting to be run inside the folder where chatbot.py lives
 
-# Log the content both on NTFY and a temp file
+# Log the content
 function log() {
-    echo "$1" >>/tmp/chatbotlog.txt
-    curl -d "$1" ntfy.sh/superchatbot
+    echo "$1"
+    # You can enable NTFY logging to debug remotely
+    # curl -d "$1" ntfy.sh/superchatbot
 }
 
 log "starting running the deploy.sh"

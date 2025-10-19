@@ -8,10 +8,6 @@ import streamlit as st
 import configparser
 from langchain_core.prompts import PromptTemplate
 
-# same model as vectorise-store.py
-ai_model_embeddings = "gemini-embedding-001"
-ai_model_final_prompt = "gemini-2.5-flash-lite"
-
 def load_config():
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -24,7 +20,11 @@ azure_account_name = config.get('azure', 'account_name')
 azure_container_name = config.get('azure', 'container_name')
 vertexai_project_id = config.get('vertexai', 'project_id')
 
-region = 'us-central1'
+# same model as vectorise-store.py
+ai_model_embeddings = config.get('vertexai', 'ai_model_embeddings')
+ai_model_final_prompt = config.get('vertexai', 'ai_model_final_prompt')
+
+vertexai_region = config.get('vertexai', 'region')
 
 # configuring streamlit page settings
 st.set_page_config(
@@ -50,7 +50,7 @@ def get_vertex_ai_client():
     scopes = ['https://www.googleapis.com/auth/cloud-platform']
     creds = service_account.Credentials.from_service_account_file(
         "vertexai-service-account-key.json", scopes=scopes)
-    return Client(vertexai=True, project=vertexai_project_id, location=region, credentials=creds)
+    return Client(vertexai=True, project=vertexai_project_id, location=vertexai_region, credentials=creds)
 
 
 def get_embedding(text):
