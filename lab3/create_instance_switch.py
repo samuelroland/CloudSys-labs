@@ -34,7 +34,7 @@ FILES_TO_UPLOAD = ["init.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "
 FILES_COPY_CMDS = gen_bash_copy_files(FILES_TO_UPLOAD)
 # The script that runs when the VM has been created, which serves as a way to install dependencies and deploy our app
 # Most of the content is written in init.sh for ease of editing
-VM_SETUP_SCRIPT = "#!/bin/bash\ncurl -d 'starting script' ntfy.sh/superchatbot && cd $HOME && mkdir deploy && cd deploy && mkdir switch\nbash init.sh\n{0}\nPATH=$PATH:$HOME/.local/bin streamlit run chatbot.py".format(FILES_COPY_CMDS)
+VM_SETUP_SCRIPT = "#!/bin/bash\ncurl -d 'starting script' ntfy.sh/superchatbot && cd $HOME && mkdir deploy && cd deploy && mkdir switch\nbash init.sh\n{0}\nPATH=$PATH:$HOME/.local/bin streamlit run chatbot.py &> /tmp/chatbotlog.txt".format(FILES_COPY_CMDS)
 
 def list_images_dispo(conn):
     print("Available Server:")
@@ -91,7 +91,9 @@ def create_server(conn):
     # Link Floating IP
     conn.network.update_ip(floating_ip, port_id=port_id)
 
-    print(f"ssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}")
+    print(f"You can login as ssh with\nssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}\nYou can also watch deployments logs under /tmp/chatbotlog.txt")
+
+    print(f"Chatbot started to deploy...\nPlease open http://{floating_ip.floating_ip_address}:8501 in your Web browser and wait a few minutes...")
 
 def list_servers(conn):
     print("List Servers:")

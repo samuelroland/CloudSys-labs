@@ -136,7 +136,7 @@ def generate_ai_answer(user_prompt):
     print("Context extracted from similarity search")
     for item in sim_results:
         print("- [{0}] {1}".format(item['SimilarityScore'], item['text']))
-    context = [i['text'] for i in sim_results]
+    context = "\n".join([i['text'] for i in sim_results])
 
     prompt = prepare_prompt(user_prompt, context)
     print("Last prompt with question and prompt")

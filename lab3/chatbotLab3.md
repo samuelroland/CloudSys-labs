@@ -11,6 +11,8 @@ Using proprietary APIs of Cloud providers used from a single chatbot online. Bas
 
 <img src="images/shema2.png" width="100%" />
 
+Based on the code provided for the previous lab, we refactored the scripts for the new infrastructure, keeping mostly the same scripts separation strategy. The chatbot has the same strategy as the previous one but is using the new services.
+
 ## Prerequisites
 This assumes you have Python installed and you have access to the 3 following clouds: Google Cloud, Microsoft Azure and Switch Engines.
 
@@ -22,16 +24,19 @@ This assumes you have Python installed and you have access to the 3 following cl
 1. Setup the Google Cloud environment
     1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
     1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
-    1. Install the GCloud CLI
-    1. Login `gcloud auth login`
-    1. Set the project `gcloud config set project chatbot-475420`
-    1. Make it possible to access your credentials by Python code: `gcloud auth application-default login`
+    1. 
+![img](images/iam-add-key.png)
+![img](images/iam-dl-key.png)
+![img](images/iam-permission-vertex-ai.png)
+![img](images/iam-service-account-creation.png)
+![img](images/iam-service-account-ready.png)
 
 1. Setup the Switch Engines environment
     1. [Go login on Switch Engines panel](https://engines.switch.ch/) to get your generated API password
-    1. Make sure you have the LS (Lausanne) region chosen not the ZH one...
+    1. **Make sure you have the LS (Lausanne)** region chosen not the ZH one...
     1. [Go into the API access page to get your `clouds.yaml`](https://engines.switch.ch/horizon/project/api_access/)
-        ![switch-engines-clouds-yaml.png](images/switch-engines-clouds-yaml.png)
+        ![switch-engines-clouds-yaml-button.png](imgs/switch-engines-clouds-yaml-button.png)
+
     1. Move this file under a `switch` subfolder in this directory
     1. Edit it to add your password
     1. An SSH keypair will be created automatically and downloaded under `switch/switchengine-tsm-cloudsys.pem` if it doesn't already exist.
