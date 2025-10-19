@@ -47,13 +47,16 @@ def get_cosmos_client():
     return CosmosClient(cosmos_url, credential=key)
 
 
-def get_embedding(text):
-    # the key is only useful when the gcloud auth login is not done
+def get_vertex_ai_client():
+    # the key is only useful for remote use, when "gcloud auth login" has not been run
     scopes = ['https://www.googleapis.com/auth/cloud-platform']
     creds = service_account.Credentials.from_service_account_file(
         "vertexai-service-account-key.json", scopes=scopes)
-    client = Client(vertexai=True, project=vertexai_project_id,
-                    location=region, credentials=creds)
+    return Client(vertexai=True, project=vertexai_project_id, location=region, credentials=creds)
+
+
+def get_embedding(text):
+    client = get_vertex_ai_client()
 
     result = client.models.embed_content(
         model=ai_model_embeddings,
@@ -113,9 +116,7 @@ def prepare_prompt(question, context):
 
 
 def generate_answer(prompt):
-
-    client = Client(
-        vertexai=True, project=vertexai_project_id, location=region)
+    client = get_vertex_ai_client()
     print(f"Using chat model: {ai_model_final_prompt}")
     response = client.models.generate_content(
         model=ai_model_final_prompt,

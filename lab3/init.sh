@@ -7,8 +7,8 @@ function log() {
 }
 
 log "starting running the init.sh"
-apt update
-apt install -y git python-pip
+sudo apt update
+sudo apt install -y git python3-pip tree
 
 log "python pip installed $(python -V) and $(pip -V)"
 
@@ -19,5 +19,3 @@ log "repos cloned $(pwd) and\\n $(ls)"
 log "Tree view $(tree)"
 log "Installing pip dependencies"
 pip install -r requirements.txt
-log "All good, starting streamlit chatbot !"
-streamlit run chatbot.py
