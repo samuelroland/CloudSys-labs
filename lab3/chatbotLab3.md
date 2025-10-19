@@ -28,6 +28,7 @@ This assumes you have Python installed and you have access to the 3 following cl
     ![img](images/iam-service-account-creation.png)
     1. Add **Vertex AI User** role and Continue with defaults.  
     <img src="images/iam-permission-vertex-ai.png" height="400" />  
+
     1. Now you have a service account, click on it  
     <img src="images/iam-service-account-ready.png" height="400" />  
     1. Go in the Keys tab to **Add key** > Create new key  
