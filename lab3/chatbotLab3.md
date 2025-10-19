@@ -56,7 +56,7 @@ This assumes you have Python installed and you have access to the 3 following cl
 ## S3-compatible container creation on Switch engines
 We know this wasn't 100% recommended by John White but we tried and it works.
 ```sh
-python create-S3-and-put-docs_switch.py --pdf_path ../../../TSM_CloudSys-2024-25.pdf
+python manage-S3_switch.py --pdf_path ../../../TSM_CloudSys-2024-25.pdf
 ```
 With this script, we create container in object store, upload an pdf. We can also download this pdf, list object storage and contents and delete a dedicated container.
 
@@ -75,6 +75,7 @@ It may take 1–2 minutes to complete. You can check the registration status wit
 az provider show --namespace Microsoft.DocumentDB --query "registrationState"
 ``` 
 The command should return `Registered`
+
 2. Then you can run
     ```console
     > python setup-azure.py
@@ -100,7 +101,7 @@ TSM_CloudSys-2024-25.pdf downloaded successfully.
 
 And run the script `vectorise-store.py` which is an adaptation of the provided script in the previous lab.
 ```sh
-python vectorise-store.py --local_path s3-download/TSM_CloudSys-2024-25.pdf
+python vectorise-store.py --local_path s3-download
 ```
 
 ## Accessing the application locally

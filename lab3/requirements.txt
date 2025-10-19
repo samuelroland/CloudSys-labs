@@ -1,12 +1,27 @@
+# OpenStack
 openstacksdk
+
+# Azure
 azure-cosmos
 azure-identity
 azure-mgmt-resource
 azure-mgmt-authorization
 azure-mgmt-cosmosdb
+
+# Google
 google-genai
+
+# UI
 streamlit
-langchain-core
+
+# Langchain & extensions
+langchain==0.3.27
+langchain-core==0.3.76
+langchain-community==0.3.29
+langchain-text-splitters==0.3.11
+
+# Other utilities
 paramiko
 scp
+pypdf
 
