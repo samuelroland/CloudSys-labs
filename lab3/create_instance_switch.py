@@ -16,10 +16,10 @@ def gen_bash_copy_files(files):
         with open(file, 'r') as file:
             content = file.read()
         commands += f"""
-            cat <<EOT > {file}
-            {content}
-            EOT
-            """
+printf '%s' '{content}
+' > {file.name}
+"""
+    return commands
 
 
 IMAGE_NAME = "Ubuntu Jammy 22.04 (SWITCHengines)"
@@ -34,10 +34,7 @@ FILES_TO_UPLOAD = ["init.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "
 FILES_COPY_CMDS = gen_bash_copy_files(FILES_TO_UPLOAD)
 # The script that runs when the VM has been created, which serves as a way to install dependencies and deploy our app
 # Most of the content is written in init.sh for ease of editing
-VM_SETUP_SCRIPT = f"""#!/bin/bash
-{FILES_COPY_CMDS}
-bash init.sh
-"""
+VM_SETUP_SCRIPT = "#!/bin/bash\nmkdir /deploy && cd /deploy && mkdir switch\n{0}\nbash init.sh".format(FILES_COPY_CMDS)
 
 
 def list_images_dispo(conn):

@@ -12,8 +12,6 @@ apt install -y git python-pip
 
 log "python pip installed $(python -V) and $(pip -V)"
 
-mkdir /deploy
-cd /deploy
 git clone https://github.com/samuelroland/CloudSys-labs.git labs || log "failed to git clone"
 cd labs/lab3
 
