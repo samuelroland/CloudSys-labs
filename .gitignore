@@ -1,5 +1,6 @@
 config.ini
 lab3/bucketcontent
 lab3/azure-db-key.txt
+lab3/vertexai-service-account-key.json
 lab3/switch/clouds.yaml
 lab3/switch/switchengine-tsm-cloudsys.pem

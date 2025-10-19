@@ -13,7 +13,7 @@ def deploy(username, host):
     # Make sure all FILES_TO_UPLOAD do exist
     for file in FILES_TO_UPLOAD:
         if not os.path.isfile(file):
-            print(f"Error: file {file} should have been manually created to be uploaded !")
+            print(f"Error: file {file} should exist for the deployment !")
             return
 
     ssh = SSHClient()
@@ -34,6 +34,7 @@ def deploy(username, host):
     scp.close()
 
     print("Starting deploy.sh on the VM")
+
     # Execute and capture output
     stdin, stdout, stderr = ssh.exec_command(f"cd {DEPLOY_ROOT_FOLDER} && bash deploy.sh")
 
@@ -44,17 +45,14 @@ def deploy(username, host):
             break
         print(line, end='')
 
-    # Print any errors
-    for line in stderr.readlines():
-        print(f"ERROR: {line}", end='')
-
-    # Get exit status
     exit_status = stdout.channel.recv_exit_status()
     if exit_status != 0:
+        for line in stderr.readlines():
+            print(f"ERROR: {line}", end='')
         print(f"\nDeployment failed with exit status {exit_status}")
         return
 
-    print(f"Chatbot has been deployed...\nPlease open http://{host}:8501 in your Web browser !")
+    print(f"\n\nCHATBOT HAS BEEN DEPLOYED...\nPlease open http://{host}:8501 in your Web browser !")
 
 
 if __name__ == "__main__":

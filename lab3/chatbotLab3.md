@@ -11,7 +11,7 @@ Using proprietary APIs of Cloud providers used from a single chatbot online. Bas
 
 <img src="images/shema2.png" width="100%" />
 
-Based on the code provided for the previous lab, we refactored the scripts for the new infrastructure, keeping mostly the same scripts separation strategy. The chatbot has the same strategy as the previous one but is using the new services.
+Based on the code provided for the previous lab, we refactored the scripts for the new infrastructure, keeping mostly the same scripts separation strategy. The chatbot has the same strategy as the previous one but is using the new services. For ease of execution, we have chosen a few hard-coded values inside the scripts directly. They can be easily changed by editing the scripts directly.
 
 ## Prerequisites
 This assumes you have Python installed and you have access to the 3 following clouds: Google Cloud, Microsoft Azure and Switch Engines.
@@ -58,7 +58,10 @@ With this script, we create container in object store, upload an pdf. We can als
 object storage and contents and delete a dedicated container.
 
 ## Vector database creation on Azure Cosmos DB service
-We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB)
+We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB).
+
+Note: the account name is the same as the database name.
+<!-- TODO: should we change that ?? I didn't understand that at start so I mixed the 2 variables in code. -->
 
 1. Then you can run the Python script that will 
     ```sh
@@ -71,11 +74,7 @@ We are going to use **Azure Cosmos DB** for this part. The home page of this ser
 
 ![primary key](./images/azure-cosmos-db-primary-key.png)
 
-TODO: should we move the hardcoded values as program args ???
-
-
 ![cosmos-db-success.png](images/cosmos-db-success.png)
-
 
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in a database in Cosmos DB.
@@ -118,23 +117,41 @@ groupd-labo1 - ACTIVE - 78f67707-26ab-4b57-8d6c-81c004df1853
 These files will be used in the `create_instance_switch.py` script, which you can simply run with
 ```console
 $ python create_instance_switch.py
-
-Create Server:
-ssh -i ./switch/switchengine-tsm-cloudsys.pem ubuntu@10.0.5.49
 List Servers:
-groupd-labo1 - ACTIVE - 496be91b-b1a9-4afd-8a78-996994e54e11
+Create Server:
+
+VM 'groupd-labo1' created.
+You can login with SSH in a minute with
+ssh -i ./switch/switchengine-tsm-cloudsys.pem ubuntu@86.119.31.138
 ```
 
-TODO fix the output with public IP !
-
-Now an Ubuntu 22.04 instance of flavour `m1.small` should be running and accessible.
+Now an Ubuntu 22.04 instance of flavour `m1.small` should be running and accessible. It take 1-2 minutes to be accessible via SSH.
 
 ![switch-vm-running.png](images/switch-vm-running.png)
 
 ## Deploy the chatbot on the VM
 The VM is ready to host the chatbot. Get the hostname showed previously and run it like that
-```sh
-python deploy.py --host 86.119.30.166
+```console
+$ python deploy.py --host 86.119.31.138
+
+Uploading current folder into the VM
+Starting deploy.sh on the VM
+{"id":"mOiwLAWGZihG","time":1760893038,"expires":1760936238,"event":"message","topic":"superchatbot","message":"starting running the deploy.sh"}
+Hit:1 http://ch.archive.ubuntu.com/ubuntu jammy InRelease
+Get:2 http://ch.archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+
+...
+Defaulting to user installation because normal site-packages is not writeable
+Collecting openstacksdk
+  Downloading openstacksdk-4.7.1-py3-none-any.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 10.3 MB/s eta 0:00:00
+Collecting azure-cosmos
+  Downloading azure_cosmos-4.14.0-py3-none-any.whl (385 kB)
+
+...
+
+CHATBOT HAS BEEN DEPLOYED...
+Please open http://86.119.31.138:8501 in your Web browser !
 ```
 
 ## Accessing the application online

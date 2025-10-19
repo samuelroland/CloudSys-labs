@@ -41,14 +41,12 @@ st.title("Chat with your lecture")
 def get_cosmos_client():
     cosmos_url = "https://{0}.documents.azure.com:443/".format(
         azure_account_name)
-    # TODO: pass that as arguments ?
     with open('azure-db-key.txt', 'r') as file:
         key = file.read().rstrip()
     return CosmosClient(cosmos_url, credential=key)
 
 
 def get_vertex_ai_client():
-    # the key is only useful for remote use, when "gcloud auth login" has not been run
     scopes = ['https://www.googleapis.com/auth/cloud-platform']
     creds = service_account.Credentials.from_service_account_file(
         "vertexai-service-account-key.json", scopes=scopes)
@@ -67,18 +65,6 @@ def get_embedding(text):
 
 # Cosmos DB equivalent of similarity_search()
 def similarity_search_cosmos_db(embed_query, vector_field='vector_field', top_k=5):
-    vector_query = {
-        "vector": embed_query,
-        "topK": top_k,
-        "vectorField": vector_field,
-        "similarityFunction": "cosine"  # or 'euclidean', 'dotProduct'
-    }
-
-    query = {
-        "filter": "",
-        "vectorSearch": vector_query
-    }
-
     client = get_cosmos_client()
     database = client.get_database_client(azure_account_name)
     container = database.get_container_client(azure_container_name)

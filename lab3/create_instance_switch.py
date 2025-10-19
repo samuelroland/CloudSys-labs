@@ -58,9 +58,7 @@ def create_server(conn):
     # Link Floating IP
     conn.network.update_ip(floating_ip, port_id=port_id)
 
-    print(f"You can login with SSH in a minute with\nssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}\nYou can also watch deployments logs under /tmp/chatbotlog.txt")
-
-    print(f"Chatbot started to deploy...\nPlease open http://{floating_ip.floating_ip_address}:8501 in your Web browser and wait a few minutes...")
+    print(f"You can login with SSH in a minute with\nssh -i {PRIVATE_KEYPAIR_FILE} ubuntu@{floating_ip.floating_ip_address}")
 
 def list_servers(conn):
     print("List Servers:")
@@ -80,6 +78,7 @@ def delete_server(conn, server_name):
         if fip.port_id and fip.port_id in [p.id for p in ports]:
             conn.network.delete_ip(fip)
             print(f"Floating IP {fip.floating_ip_address} released")
+# todo make sure it released them all
 
 
 if __name__ == "__main__":
