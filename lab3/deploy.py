@@ -17,7 +17,7 @@ config = load_config()
 
 PRIVATE_KEYPAIR_FILE = config.get('switch', 'private_keypair_file')
 CLOUDS_YAML = config.get('switch', 'clouds_yaml')
-FILES_TO_UPLOAD = ["deploy.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "azure-db-key.txt", "vertexai-service-account-key.json"]
+FILES_TO_UPLOAD = ["chatbot.py", "deploy.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "azure-db-key.txt", "vertexai-service-account-key.json"]
 DEPLOY_ROOT_FOLDER = '/home/ubuntu'
 
 def deploy(username, host):
@@ -34,12 +34,8 @@ def deploy(username, host):
 
     scp = SCPClient(ssh.get_transport())
 
-    # Last safety measure to avoid uploading files from the wrong directory...
-    if not os.path.isfile("chatbot.py"):
-        print("Chatbot not found, probably incorrect folder")
-        return
-
     print("Uploading current folder into the VM")
+    # TODO: do we want to upload only the FILES_TO_UPLOAD ?
     scp.put('./', recursive=True, remote_path=DEPLOY_ROOT_FOLDER)
 
     scp.close()
