@@ -22,7 +22,8 @@ This assumes you have Python installed and you have access to the 3 following cl
     ```
 1. **For Azure**: [Install the Azure CLI `az`](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and run `az login`.
 1. **Setup the Google Cloud environment**
-    1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) and get it's ID. For this example, we got `chatbot-475420`.
+    1. Create manually a [New project on GCloud](https://console.cloud.google.com/projectcreate) named `chatbot` and get it's ID. For this example, we got `chatbot-475420`.
+    1. **Change your config.ini file with your ID under key `vertexai` > `project_id`**
     1. Enable Google Vertex AI API [here](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com)
     1. You have to create a Service account, go in IAM, and create one like on this picture  
     ![img](images/iam-service-account-creation.png)
@@ -64,7 +65,6 @@ With this script, we create container in object store, upload an pdf. We can als
 We are going to use **Azure Cosmos DB** for this part. The home page of this service is here: [Create an Azure Cosmos DB account](https://portal.azure.com/#create/Microsoft.DocumentDB).
 
 Note: the account name is also used as the database name. This name must be unique and can only 
-<!-- TODO: should we change that ?? I didn't understand this was different at start so I mixed the 2 variables in code. -->
 
 1. Activate the Cosmos DB service for your Azure account
  ```sh
@@ -87,7 +87,6 @@ The command should return `Registered`
 
 ![primary key](./images/azure-cosmos-db-primary-key.png)
 
-![cosmos-db-success.png](images/cosmos-db-success.png)
 
 ## Vectorizing the PDF Files
 We want to download the files in S3 again, ask Google Vertex AI to generate embeddings and store them in a container in a database in Cosmos DB.
@@ -103,7 +102,10 @@ And run the script `vectorise-store.py` which is an adaptation of the provided s
 ```sh
 python vectorise-store.py --local_path s3-download
 ```
-TODO: est ce que gemini-embedding-001 est dispo? Ne semble pas etre le cas
+
+You can verify the embeddings have been stored by looking at the Azure portal. You should see entries with chunks of the text, a giant float array, the text of the chunk and the source file.
+
+![cosmos-db-success.png](images/cosmos-db-success.png)
 
 ## Accessing the application locally
 To make sure everything is working, there is a little `test.py` script that allows to quickly test the bot without open the streamlit chat. The message sent is hard-coded and can be changed if needed.

@@ -4,3 +4,4 @@ lab3/__pycache__
 lab3/vertexai-service-account-key.json
 lab3/switch/clouds.yaml
 lab3/switch/switchengine-tsm-cloudsys.pem
+lab3/s3-download
