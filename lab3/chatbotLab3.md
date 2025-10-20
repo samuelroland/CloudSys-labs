@@ -1,5 +1,7 @@
 # Chatbot lab
 
+**Authors**: Olivia Manz and Samuel Roland in **Group D**
+
 ## Goal
 Using proprietary APIs of Cloud providers from a single online chatbot. Based on the slides schemas, we updated the 2 architecture diagrams.
 
