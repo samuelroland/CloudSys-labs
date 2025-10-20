@@ -3,6 +3,7 @@
 # Helped by ChatGPT
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from google.oauth2 import service_account
 import argparse
 import uuid
 import configparser
@@ -110,8 +111,11 @@ def generate_embeddings(chunks):
     # Batch embeddings (Vertex AI supports batching up to 100 texts per request)
     embeddings = []
     batch_size = 100
+    scopes = ['https://www.googleapis.com/auth/cloud-platform']
+    creds = service_account.Credentials.from_service_account_file(
+        "vertexai-service-account-key.json", scopes=scopes)
     client = Client(
-        vertexai=True, project=PROJECT_ID, location=VERTEXAI_REGION)
+        vertexai=True, project=PROJECT_ID, location=VERTEXAI_REGION, credentials=creds)
 
     for i in range(0, len(chunks_list), batch_size):
         batch = chunks_list[i:i+batch_size]
