@@ -34,9 +34,9 @@ def deploy(username, host):
 
     scp = SCPClient(ssh.get_transport())
 
-    print("Uploading current folder into the VM")
-    # TODO: do we want to upload only the FILES_TO_UPLOAD ?
-    scp.put('./', recursive=True, remote_path=DEPLOY_ROOT_FOLDER)
+    print("Uploading chatbot related files into the VM")
+    for file in FILES_TO_UPLOAD:
+        scp.put(file, remote_path=f"{DEPLOY_ROOT_FOLDER}/{file}")
 
     scp.close()
 
