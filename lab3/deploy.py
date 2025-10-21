@@ -17,7 +17,7 @@ config = load_config()
 
 PRIVATE_KEYPAIR_FILE = config.get('switch', 'private_keypair_file')
 CLOUDS_YAML = config.get('switch', 'clouds_yaml')
-FILES_TO_UPLOAD = ["chatbot.py", "deploy.sh", "config.ini", CLOUDS_YAML, PRIVATE_KEYPAIR_FILE, "azure-db-key.txt", "vertexai-service-account-key.json"]
+FILES_TO_UPLOAD = ["chatbot.py", "requirements.txt", "deploy.sh", "config.ini", "azure-db-key.txt", "vertexai-service-account-key.json"]
 DEPLOY_ROOT_FOLDER = '/home/ubuntu'
 
 def deploy(username, host):
@@ -35,6 +35,7 @@ def deploy(username, host):
     scp = SCPClient(ssh.get_transport())
 
     print("Uploading chatbot related files into the VM")
+
     for file in FILES_TO_UPLOAD:
         scp.put(file, remote_path=f"{DEPLOY_ROOT_FOLDER}/{file}")
 
