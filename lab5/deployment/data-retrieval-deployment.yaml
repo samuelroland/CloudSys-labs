@@ -1,0 +1,40 @@
+# data-retrieval-deployment.yaml
+# Deploy only once, so we use a Job instead of a Deployment
+# Run only once, so we use restartPolicy: Never
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-retrieval-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: data-retrieval-pod
+    spec:
+      nodeSelector:
+        role: control-plane
+      containers:
+      - name: data-retrieval
+        image: omanzmaster/data-retrieval:latest
+        imagePullPolicy: Always
+        env:
+        - name: REDIS_HOST
+          value: redis
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: kub-aws
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kub-aws
+              key: AWS_SECRET_ACCESS_KEY
+      restartPolicy: Never
+
+
+# There is no service for this Job, because the job does not need to be accessed externally or expose any ports. 
+# It will connect to the Redis service internally within the cluster. 
+# The Redis service itself still needs a service definition to allow other pods to connect to it.
+

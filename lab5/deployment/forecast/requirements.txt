@@ -1,0 +1,6 @@
+h5py
+redis
+tensorflow
+pandas
+numpy
+keras

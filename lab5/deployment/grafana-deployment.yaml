@@ -1,0 +1,123 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+data:
+  grafana.ini: |
+    [security]
+    admin_user = admin
+    admin_password = admin
+
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Redis
+      type: redis-datasource
+      access: proxy
+      url: redis://redis:6379
+      jsonData:
+        client: 'default'
+        acl: true
+        tlsAuth: false
+        tlsAuthWithCACert: false
+
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      options:
+        path: /var/lib/grafana/dashboards
+
+---
+# A K8S cluster resource that represetns a piece of storage in the cluster.
+# It is a volume that can be mounted to a pod.
+# In this case, it is local, as it is mounted to the hostPath /mnt/data.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+# A request for storage. Abstracts the need to know the underlying storage technology.
+# It is automtically bound (connected) to a PersistentVolume, which in this case is the grafana-pv.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deployment
+spec:
+  replicas: 1  # Set to 1 due to ReadWriteOnce constraint
+  selector:
+    matchLabels:
+      app: grafana-pod
+  template:
+    metadata:
+      labels:
+        app: grafana-pod
+    spec:
+      nodeSelector:
+        role: control-plane
+      containers:
+      - name: grafana
+        image: omanzmaster/my-grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: admin  # Set admin password (adjust as necessary)
+        #- name: GF_INSTALL_PLUGINS
+        #  value: redis-datasource  # Install the Redis Data Source plugin
+        volumeMounts:
+        - name: config
+          mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          subPath: datasources.yaml
+        - name: config
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+          subPath: dashboards.yaml
+        - name: dashboards
+          mountPath: /var/lib/grafana/dashboards
+        - name: config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+      volumes:
+        - name: config
+          configMap:
+            name: grafana-config
+        - name: dashboards
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 32000   # port accessible depuis l'extérieur
+  selector:
+    app: grafana-pod

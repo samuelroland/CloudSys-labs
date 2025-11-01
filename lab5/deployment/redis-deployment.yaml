@@ -1,0 +1,38 @@
+# redis-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-pod # doit correspondre a template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: redis-pod
+    spec:
+      nodeSelector:
+        role: control-plane
+      containers:
+      - name: redis
+        image: redislabs/redistimeseries:latest  # Use the RedisTimeSeries image
+        ports:
+        - containerPort: 6379
+    
+---
+# redis-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    # Fill with the correct label
+    app: redis-pod # doit matcher le deployment
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+
