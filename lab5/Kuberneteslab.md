@@ -24,7 +24,6 @@ We can prepare the futur by adding:
 - `TCP 32000` to allow access to the Grafana dashboard from outside the cluster.
 To minimize exposure, restrict the source to the security group itself for `UDP 8472` and `TCP 6443`.
 
-![rules](./result/rules.png)
 
 ## Install k3s on control-pane
 Connect to the `GroupD-control-plane` instance via SSH. The IP address (or SSH command) is available in the AWS console:
@@ -133,24 +132,7 @@ Finally, we deployed Grafana:
 sudo k3s kubectl apply -f /home/ec2-user/deployment/grafana-deployment.yaml 
 ```
 
-We verified the status of all pods:
-```console
-$ sudo kubectl get all -o wide
-NAME                                       READY   STATUS      RESTARTS   AGE   IP           NODE                            NOMINATED NODE   READINESS GATES
-pod/busybox-pod                            1/1     Running     0          32m   10.42.0.11   ip-172-31-29-6.ec2.internal     <none>           <none>
-pod/data-retrieval-job-klhc6               0/1     Completed   0          62m   10.42.0.10   ip-172-31-29-6.ec2.internal     <none>           <none>
-pod/forecast-deployment-66fb88d988-466tk   1/1     Running     0          19m   10.42.1.7    ip-172-31-23-123.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-5jhnp   1/1     Running     0          19m   10.42.3.9    ip-172-31-24-250.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-6xtdq   1/1     Running     0          19m   10.42.2.8    ip-172-31-27-254.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-h6zsp   1/1     Running     0          19m   10.42.3.10   ip-172-31-24-250.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-hx49r   1/1     Running     0          19m   10.42.2.9    ip-172-31-27-254.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-psbjg   1/1     Running     0          19m   10.42.1.8    ip-172-31-23-123.ec2.internal   <none>           <none>
-pod/forecast-deployment-66fb88d988-wl6tg   1/1     Running     0          19m   10.42.3.8    ip-172-31-24-250.ec2.internal   <none>           <none>
-pod/grafana-deployment-68994679dd-b4dnz    1/1     Running     0          17m   10.42.0.14   ip-172-31-29-6.ec2.internal     <none>           <none>
-pod/redis-deployment-76df9f5d64-62w2s      1/1     Running     0          63m   10.42.0.9    ip-172-31-29-6.ec2.internal     <none>           <none>
-```
-
-Here is the full output of `sudo kubectl get all -o wide` in screenshot.
+We verified the status of all pods and here is the full output of `sudo kubectl get all -o wide` in screenshot.
 
 ![kubectlgetall](./result/kubectlgetall.png)
 
