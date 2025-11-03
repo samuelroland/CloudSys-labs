@@ -106,8 +106,6 @@ spec:
 ```
 
 ## Deploying the Services
-First idea was to run kubectl from our computer. To manage this, we copy the k3s configuration locally, change it with the localhost IP replaced by the control-plane public IP. But we couldn't manage to access the k3s command.
-
 We decide to copy deployment files on control-plane node and run these commands locally to upload the folder `deployment` under `/home/ec2-user/`.
 ```sh
 scp -i Gd-control-plane.pem -r deployment ec2-user@54.204.109.236:/home/ec2-user/
