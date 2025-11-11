@@ -45,3 +45,22 @@ Security group tags:
 > The template specified an output parameter _WebsiteURL_. What is its value?  
 
 In our case the value is `44.211.131.166`. It's the public IPv4 address of EC2 instance created.
+
+> The LAMP Stack template by AWS makes things appear easier than they are. They use an ugly hack to make the selection of the instance type easy for the user of the template, but it makes the template difficult to maintain. Explain the hack.
+
+To make it easier to select the instance type and create a dropdown list, the template hardcodes the possible instance types:
+```
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t3.micro
+      - t3.small
+      - t3.medium
+```
+It’s the same for the `osVersion` and `ImageId` parameters.
+However, if AWS adds new instance types, the template must be updated manually, it’s not dynamic. Moreover, some instance types are not available in all regions.
+Here, the possible choices are hardcoded to avoid incompatible configurations.
