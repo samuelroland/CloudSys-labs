@@ -10,8 +10,8 @@ We will use the following __lab naming convention:__ the name of every cloud res
 ## Task 1.2: Launch a stack
 To create the stack, we will choose a existing subnet with Auto-assign public IPv4 address=yes. For the VPC, we choose the VPC with the previous subnet assigned.
 In our case, we choose:
-subnet id: subnet-032ade9da5a97829a
-vpc: vpc-037435ee28ff909f8 
+- subnet id: subnet-032ade9da5a97829a
+- vpc: vpc-037435ee28ff909f8 
 
 
 > What tags did CloudFormation add to the EC2 Instance? Which tag is used by CloudFormation to uniquely identify the resource?
@@ -26,7 +26,7 @@ Tags of EC2 instance
 | CloudFormationTest                  | true                                                                                                        |
 | aws:cloudformation:logical-id       | WebServer                                                                                                   |
 
-*aws:cloudformation:stack-id* is used by CloudFormation to uniquely identify the resource
+`aws:cloudformation:stack-id` is used by CloudFormation to uniquely identify the resource
 
 > How did CloudFormation name the Security Group and what tags did it add?
 
@@ -49,7 +49,7 @@ In our case the value is `44.211.131.166`. It's the public IPv4 address of EC2 i
 > The LAMP Stack template by AWS makes things appear easier than they are. They use an ugly hack to make the selection of the instance type easy for the user of the template, but it makes the template difficult to maintain. Explain the hack.
 
 To make it easier to select the instance type and create a dropdown list, the template hardcodes the possible instance types:
-```
+```yaml
   InstanceType:
     Type: String
     Default: t2.micro
