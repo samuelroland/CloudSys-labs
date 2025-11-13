@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "app_server" {
-  ami           = "ami-0149b2da6ceec4bb0" # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
+  ami           = "ami-08c40ec9ead489470" # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
   instance_type = "t2.micro"
 
   tags = {
