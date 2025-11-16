@@ -315,12 +315,148 @@ Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
 
 ## Task 2.2: Develop and test Terraform configurations by using LocalStack
 
-TODO
+The caller identity has changed after defining the alias.
 
-    When switching from AWS services to LocalStack, why do you need to do an init again? Think about the role of the Terraform state file.
-    Show in the report how you verified that the instance was "created" in LocalStack.
+```console
+> aws sts get-caller-identity
+{
+    "UserId": "AKIAIOSFODNN7EXAMPLE",
+    "Account": "000000000000",
+    "Arn": "arn:aws:iam::000000000000:root"
+}
+```
+
+
+> When switching from AWS services to LocalStack, why do you need to do an init again? Think about the role of the Terraform state file.
+
+The `tflocal init` command doesn't seem to do anything on the files of the `terraform` folder. The state file is not changed.
+
+TODO: find why there is no change ? is this expected ? this is currently a useless command
+
+
+> Show in the report how you verified that the instance was "created" in LocalStack.
+
+To prove that something fake is running in LocalStack, we can list used services before and after.
+
+```console
+> localstack status services
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Service                  ┃ Status      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ acm                      │ ✔ available │
+│ apigateway               │ ✔ available │
+│ cloudformation           │ ✔ available │
+│ cloudwatch               │ ✔ available │
+│ config                   │ ✔ available │
+│ dynamodb                 │ ✔ available │
+│ dynamodbstreams          │ ✔ available │
+│ ec2                      │ ✔ available │
+│ es                       │ ✔ available │
+│ events                   │ ✔ available │
+│ firehose                 │ ✔ available │
+│ iam                      │ ✔ available │
+│ kinesis                  │ ✔ available │
+...
+```
+
+```console
+> tflocal init
+...
+> tflocal plan
+...
+> tflocal apply
+
+...
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+aws_instance.app_server: Creating...
+aws_instance.app_server: Still creating... [00m10s elapsed]
+aws_instance.app_server: Creation complete after 10s [id=i-e094d19a69786eec3]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+The `iam` and `ec2` services are now "running".
+
+```console
+> localstack status services
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Service                  ┃ Status      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ acm                      │ ✔ available │
+│ apigateway               │ ✔ available │
+│ cloudformation           │ ✔ available │
+│ cloudwatch               │ ✔ available │
+│ config                   │ ✔ available │
+│ dynamodb                 │ ✔ available │
+│ dynamodbstreams          │ ✔ available │
+│ ec2                      │ ✔ running   │
+│ es                       │ ✔ available │
+│ events                   │ ✔ available │
+│ firehose                 │ ✔ available │
+│ iam                      │ ✔ running   │
+...
+```
 
 ## Task 2.3: Add a security group
+
+
+> Modify the Terraform configuration file to add a security group. The security group shall allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic.
+
+We first need to provision a security group based on [documentation of `Resource: aws_security_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group).
+
+```hcl
+resource "aws_security_group" "our_security_group" {
+  name        = "our_security_group"
+  description = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
+  vpc_id      = aws_vpc.main.id
+}
+```
+
+We added a first egress rule (traffic from inside the VPC to other external servers) to implement the "allow any outgoing traffic".
+
+We can reuse these 2 rules from the doc page to allow for IPv4 and IPv6.
+```hcl
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
+  security_group_id = aws_security_group.allow_tls.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
+  security_group_id = aws_security_group.allow_tls.id
+  cidr_ipv6         = "::/0"
+  ip_protocol       = "-1" # semantically equivalent to all ports
+}
+```
+
+To allow SSH and HTTPS, we just need to authorize the ports 443 and 22 with an ingress rules (incoming traffic).
+
+Here as we want a single port 443, we have to specify a range of 1 element 443 -> 443 via `from_port` and `to_port`. ([Source](https://stackoverflow.com/questions/74268975/what-is-the-meaning-of-this-security-group-declaration-in-terraform))
+```hcl
+resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
+  security_group_id = aws_security_group.allow_tls.id
+  cidr_ipv4         = aws_vpc.main.cidr_block
+  from_port         = 443
+  ip_protocol       = "tcp"
+  to_port           = 443
+}
+```
+And we can do the same for port 22
+```hcl
+resource "aws_vpc_security_group_ingress_rule" "allow_incoming_ssh" {
+  security_group_id = aws_security_group.allow_tls.id
+  cidr_ipv4         = aws_vpc.main.cidr_block
+  from_port         = 22
+  ip_protocol       = "tcp"
+  to_port           = 22
+}
+```
 
 TODO
 
