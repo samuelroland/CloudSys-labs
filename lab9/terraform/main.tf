@@ -18,7 +18,7 @@ resource "aws_instance" "app_server" {
   instance_type = "t2.micro"
 
   tags = {
-    Name   = "ExampleAppServerInstance"
+    Name   = "GrD-RolandManz-Instance"
     Course = "TSM-CloudSys"
     Year   = "2025"
     Lab    = "Terraform"
@@ -35,8 +35,15 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_security_group" "main" {
-  name        = "our_security_group"
+  name        = "GrD-RolandManz-SecurityGroup"
   description = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
+  tags = {
+    Name   = "GrD-RolandManz-SecurityGroup"
+    Course = "TSM-CloudSys"
+    Year   = "2025"
+    Lab    = "Terraform"
+    Group  = "D"
+  }
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
@@ -53,7 +60,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
   security_group_id = aws_security_group.main.id
-  cidr_ipv4         = aws_vpc.main.cidr_block
+  cidr_ipv4         = "0.0.0.0/0"
   from_port         = 443
   ip_protocol       = "tcp"
   to_port           = 443
@@ -61,8 +68,19 @@ resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_incoming_ssh" {
   security_group_id = aws_security_group.main.id
-  cidr_ipv4         = aws_vpc.main.cidr_block
+  cidr_ipv4         = "0.0.0.0/0"
   from_port         = 22
   ip_protocol       = "tcp"
   to_port           = 22
 }
+
+output "instance_public_ip" {
+  description = "Private IP address of the EC2 instance"
+  value       = aws_instance.app_server.private_ip
+}
+
+output "instance_id" {
+  description = "EC2 instance ID"
+  value       = aws_instance.app_server.id
+}
+
