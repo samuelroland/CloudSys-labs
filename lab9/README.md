@@ -192,7 +192,7 @@ Terraform will perform the following actions:
             "Course" = "TSM-CloudSys"
             "Group"  = "D"
             "Lab"    = "Terraform"
-            "Name"   = "ExampleAppServerInstance"
+            "Name"   = "GrD-RolandManz-SecurityGroup"
             "Year"   = "2025"
         }
       ~ tenancy                              = "default" -> (known after apply)
@@ -329,9 +329,7 @@ The caller identity has changed after defining the alias.
 
 > When switching from AWS services to LocalStack, why do you need to do an init again? Think about the role of the Terraform state file.
 
-The `tflocal init` command doesn't seem to do anything on the files of the `terraform` folder. The state file is not changed.
-
-TODO: find why there is no change ? is this expected ? this is currently a useless command
+The `tflocal init` command doesn't seem to do anything on the files of the `terraform` folder. This is probably because the state file needs to be reset to avoid considering the AWS infrastructure state as the localstack state.
 
 
 > Show in the report how you verified that the instance was "created" in LocalStack.
@@ -408,28 +406,50 @@ The `iam` and `ec2` services are now "running".
 
 > Modify the Terraform configuration file to add a security group. The security group shall allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic.
 
-We first need to provision a security group based on [documentation of `Resource: aws_security_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group).
+We first need to setup a VPC with a name: `main`
 
 ```hcl
-resource "aws_security_group" "our_security_group" {
-  name        = "our_security_group"
-  description = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
-  vpc_id      = aws_vpc.main.id
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
 }
 ```
 
+Then, we need to provision a security group based on [documentation of `Resource: aws_security_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group), also named `main`.
+
+```hcl
+resource "aws_security_group" "main" {
+  name        = "GrD-RolandManz-SecurityGroup"
+  description = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
+  tags = {
+    Name   = "GrD-RolandManz-SecurityGroup"
+    Course = "TSM-CloudSys"
+    Year   = "2025"
+    Lab    = "Terraform"
+    Group  = "D"
+  }
+}
+```
+
+Under the `aws_instance` resource we need to reference the new security group, by adding this line.
+
+```hcl
+  # Use the security group created below
+  vpc_security_group_ids = [aws_security_group.main.id]
+```
+
+
 We added a first egress rule (traffic from inside the VPC to other external servers) to implement the "allow any outgoing traffic".
 
-We can reuse these 2 rules from the doc page to allow for IPv4 and IPv6.
+We can reuse these 2 rules from the doc page to allow for IPv4 and IPv6. We need to reference the `security_group_id` so Terraform know where to apply the rule.
 ```hcl
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.allow_tls.id
+  security_group_id = aws_security_group.main.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
-  security_group_id = aws_security_group.allow_tls.id
+  security_group_id = aws_security_group.main.id
   cidr_ipv6         = "::/0"
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
@@ -437,11 +457,12 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
 
 To allow SSH and HTTPS, we just need to authorize the ports 443 and 22 with an ingress rules (incoming traffic).
 
-Here as we want a single port 443, we have to specify a range of 1 element 443 -> 443 via `from_port` and `to_port`. ([Source](https://stackoverflow.com/questions/74268975/what-is-the-meaning-of-this-security-group-declaration-in-terraform))
+Here as we want a single port 443, we have to specify a range of 1 element 443 -> 443 via `from_port` and `to_port`. ([Source](https://stackoverflow.com/questions/74268975/what-is-the-meaning-of-this-security-group-declaration-in-terraform)). We want to authorize any source IP, therefore we define `cidr_ipv4         = "0.0.0.0/0"`.
+  
 ```hcl
 resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
-  security_group_id = aws_security_group.allow_tls.id
-  cidr_ipv4         = aws_vpc.main.cidr_block
+  security_group_id = aws_security_group.main.id
+  cidr_ipv4         = "0.0.0.0/0"
   from_port         = 443
   ip_protocol       = "tcp"
   to_port           = 443
@@ -450,16 +471,353 @@ resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
 And we can do the same for port 22
 ```hcl
 resource "aws_vpc_security_group_ingress_rule" "allow_incoming_ssh" {
-  security_group_id = aws_security_group.allow_tls.id
-  cidr_ipv4         = aws_vpc.main.cidr_block
+  security_group_id = aws_security_group.main.id
+  cidr_ipv4         = "0.0.0.0/0"
   from_port         = 22
   ip_protocol       = "tcp"
   to_port           = 22
 }
 ```
 
-TODO
+To add the required output, we just need to add these 2 items
 
-    Copy your Terraform configuration file into the report.
-    Copy the output of apply into the report.
-    Copy a screenshot of the AWS Management Console showing the details of the security group into the report.
+```hcl
+output "instance_public_ip" {
+  description = "Private IP address of the EC2 instance"
+  value       = aws_instance.app_server.private_ip
+}
+
+output "instance_id" {
+  description = "EC2 instance ID"
+  value       = aws_instance.app_server.id
+}
+```
+
+Result example
+```
+instance_id = "i-3089edcd0bca9fe5a"
+instance_public_ip = "10.188.234.187"
+```
+
+Here is the output resulted from `tflocal apply`
+```console
+> terraform apply
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_instance.app_server will be created
+  + resource "aws_instance" "app_server" {
+      + ami                                  = "ami-08c40ec9ead489470"
+      + arn                                  = (known after apply)
+      + associate_public_ip_address          = (known after apply)
+      + availability_zone                    = (known after apply)
+      + cpu_core_count                       = (known after apply)
+      + cpu_threads_per_core                 = (known after apply)
+      + disable_api_stop                     = (known after apply)
+      + disable_api_termination              = (known after apply)
+      + ebs_optimized                        = (known after apply)
+      + enable_primary_ipv6                  = (known after apply)
+      + get_password_data                    = false
+      + host_id                              = (known after apply)
+      + host_resource_group_arn              = (known after apply)
+      + iam_instance_profile                 = (known after apply)
+      + id                                   = (known after apply)
+      + instance_initiated_shutdown_behavior = (known after apply)
+      + instance_lifecycle                   = (known after apply)
+      + instance_state                       = (known after apply)
+      + instance_type                        = "t2.micro"
+      + ipv6_address_count                   = (known after apply)
+      + ipv6_addresses                       = (known after apply)
+      + key_name                             = (known after apply)
+      + monitoring                           = (known after apply)
+      + outpost_arn                          = (known after apply)
+      + password_data                        = (known after apply)
+      + placement_group                      = (known after apply)
+      + placement_partition_number           = (known after apply)
+      + primary_network_interface_id         = (known after apply)
+      + private_dns                          = (known after apply)
+      + private_ip                           = (known after apply)
+      + public_dns                           = (known after apply)
+      + public_ip                            = (known after apply)
+      + secondary_private_ips                = (known after apply)
+      + security_groups                      = (known after apply)
+      + source_dest_check                    = true
+      + spot_instance_request_id             = (known after apply)
+      + subnet_id                            = (known after apply)
+      + tags                                 = {
+          + "Course" = "TSM-CloudSys"
+          + "Group"  = "D"
+          + "Lab"    = "Terraform"
+          + "Name"   = "GrD-RolandManz-Instance"
+          + "Year"   = "2025"
+        }
+      + tags_all                             = {
+          + "Course" = "TSM-CloudSys"
+          + "Group"  = "D"
+          + "Lab"    = "Terraform"
+          + "Name"   = "GrD-RolandManz-Instance"
+          + "Year"   = "2025"
+        }
+      + tenancy                              = (known after apply)
+      + user_data                            = (known after apply)
+      + user_data_base64                     = (known after apply)
+      + user_data_replace_on_change          = false
+      + vpc_security_group_ids               = (known after apply)
+
+      + capacity_reservation_specification (known after apply)
+
+      + cpu_options (known after apply)
+
+      + ebs_block_device (known after apply)
+
+      + enclave_options (known after apply)
+
+      + ephemeral_block_device (known after apply)
+
+      + instance_market_options (known after apply)
+
+      + maintenance_options (known after apply)
+
+      + metadata_options (known after apply)
+
+      + network_interface (known after apply)
+
+      + private_dns_name_options (known after apply)
+
+      + root_block_device (known after apply)
+    }
+
+  # aws_security_group.main will be created
+  + resource "aws_security_group" "main" {
+      + arn                    = (known after apply)
+      + description            = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
+      + egress                 = (known after apply)
+      + id                     = (known after apply)
+      + ingress                = (known after apply)
+      + name                   = "GrD-RolandManz-SecurityGroup"
+      + name_prefix            = (known after apply)
+      + owner_id               = (known after apply)
+      + revoke_rules_on_delete = false
+      + tags                   = {
+          + "Course" = "TSM-CloudSys"
+          + "Group"  = "D"
+          + "Lab"    = "Terraform"
+          + "Name"   = "GrD-RolandManz-SecurityGroup"
+          + "Year"   = "2025"
+        }
+      + tags_all               = {
+          + "Course" = "TSM-CloudSys"
+          + "Group"  = "D"
+          + "Lab"    = "Terraform"
+          + "Name"   = "GrD-RolandManz-SecurityGroup"
+          + "Year"   = "2025"
+        }
+      + vpc_id                 = (known after apply)
+    }
+
+  # aws_vpc.main will be created
+  + resource "aws_vpc" "main" {
+      + arn                                  = (known after apply)
+      + cidr_block                           = "10.0.0.0/16"
+      + default_network_acl_id               = (known after apply)
+      + default_route_table_id               = (known after apply)
+      + default_security_group_id            = (known after apply)
+      + dhcp_options_id                      = (known after apply)
+      + enable_dns_hostnames                 = (known after apply)
+      + enable_dns_support                   = true
+      + enable_network_address_usage_metrics = (known after apply)
+      + id                                   = (known after apply)
+      + instance_tenancy                     = "default"
+      + ipv6_association_id                  = (known after apply)
+      + ipv6_cidr_block                      = (known after apply)
+      + ipv6_cidr_block_network_border_group = (known after apply)
+      + main_route_table_id                  = (known after apply)
+      + owner_id                             = (known after apply)
+      + tags_all                             = (known after apply)
+    }
+
+  # aws_vpc_security_group_egress_rule.allow_all_traffic_ipv4 will be created
+  + resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "0.0.0.0/0"
+      + id                     = (known after apply)
+      + ip_protocol            = "-1"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {}
+    }
+
+  # aws_vpc_security_group_egress_rule.allow_all_traffic_ipv6 will be created
+  + resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
+      + arn                    = (known after apply)
+      + cidr_ipv6              = "::/0"
+      + id                     = (known after apply)
+      + ip_protocol            = "-1"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {}
+    }
+
+  # aws_vpc_security_group_ingress_rule.allow_incoming_https will be created
+  + resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "0.0.0.0/0"
+      + from_port              = 443
+      + id                     = (known after apply)
+      + ip_protocol            = "tcp"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {}
+      + to_port                = 443
+    }
+
+  # aws_vpc_security_group_ingress_rule.allow_incoming_ssh will be created
+  + resource "aws_vpc_security_group_ingress_rule" "allow_incoming_ssh" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "0.0.0.0/0"
+      + from_port              = 22
+      + id                     = (known after apply)
+      + ip_protocol            = "tcp"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {}
+      + to_port                = 22
+    }
+
+Plan: 7 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + instance_id        = (known after apply)
+  + instance_public_ip = (known after apply)
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+aws_vpc.main: Creating...
+aws_security_group.main: Creating...
+aws_vpc.main: Creation complete after 5s [id=vpc-082fe8826e70c91ed]
+aws_security_group.main: Creation complete after 6s [id=sg-0b01a61e5ddf4ffb0]
+aws_vpc_security_group_egress_rule.allow_all_traffic_ipv6: Creating...
+aws_vpc_security_group_ingress_rule.allow_incoming_https: Creating...
+aws_vpc_security_group_egress_rule.allow_all_traffic_ipv4: Creating...
+aws_vpc_security_group_ingress_rule.allow_incoming_ssh: Creating...
+aws_instance.app_server: Creating...
+aws_vpc_security_group_egress_rule.allow_all_traffic_ipv4: Creation complete after 0s [id=sgr-0dcf75732315524d2]
+aws_vpc_security_group_ingress_rule.allow_incoming_ssh: Creation complete after 0s [id=sgr-05cbb3b168bf40c40]
+aws_vpc_security_group_egress_rule.allow_all_traffic_ipv6: Creation complete after 1s [id=sgr-0c16a4ed43524d28c]
+aws_vpc_security_group_ingress_rule.allow_incoming_https: Creation complete after 1s [id=sgr-04954487870d52a31]
+aws_instance.app_server: Still creating... [00m10s elapsed]
+aws_instance.app_server: Creation complete after 16s [id=i-02cb690fb56ebbcfd]
+
+Apply complete! Resources: 7 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+instance_id = "i-02cb690fb56ebbcfd"
+instance_public_ip = "172.31.28.85"
+```
+
+
+The final `main.tf` is here
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  required_version = ">= 1.2.0"
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "app_server" {
+  ami           = "ami-08c40ec9ead489470" # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
+  instance_type = "t2.micro"
+
+  tags = {
+    Name   = "GrD-RolandManz-Instance"
+    Course = "TSM-CloudSys"
+    Year   = "2025"
+    Lab    = "Terraform"
+    Group  = "D"
+  }
+
+
+  # Use the security group created below
+  vpc_security_group_ids = [aws_security_group.main.id]
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_security_group" "main" {
+  name        = "GrD-RolandManz-SecurityGroup"
+  description = "Allow incoming traffic for SSH and HTTPS from any IP source address, and allow any outgoing traffic."
+  tags = {
+    Name   = "GrD-RolandManz-SecurityGroup"
+    Course = "TSM-CloudSys"
+    Year   = "2025"
+    Lab    = "Terraform"
+    Group  = "D"
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
+  security_group_id = aws_security_group.main.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
+  security_group_id = aws_security_group.main.id
+  cidr_ipv6         = "::/0"
+  ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_incoming_https" {
+  security_group_id = aws_security_group.main.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  ip_protocol       = "tcp"
+  to_port           = 443
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_incoming_ssh" {
+  security_group_id = aws_security_group.main.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 22
+  ip_protocol       = "tcp"
+  to_port           = 22
+}
+
+output "instance_public_ip" {
+  description = "Private IP address of the EC2 instance"
+  value       = aws_instance.app_server.private_ip
+}
+
+output "instance_id" {
+  description = "EC2 instance ID"
+  value       = aws_instance.app_server.id
+}
+
+```
+
+> Copy a screenshot of the AWS Management Console showing the details of the security group into the report.
+
+![sg-inbound.png](imgs/sg-inbound.png)
+
+![sg-outbound.png](imgs/sg-outbound.png)
+
