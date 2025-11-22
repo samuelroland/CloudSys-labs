@@ -734,7 +734,7 @@ instance_id = "i-3089edcd0bca9fe5a"
 instance_public_ip = "10.188.234.187"
 ```
 
-Here is the output resulted from `tflocal apply`
+Here is the output resulted from `terraform apply`
 ```console
 > terraform apply
 
