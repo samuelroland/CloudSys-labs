@@ -284,11 +284,9 @@ Some dynamic parts will obviously need to change, like these networking lines. T
       ~ public_ip                            = "3.80.50.129" -> (known after apply)
 ```
 
-TODO: assez expliqué ou pas ??
-
 > How did Terraform implement the change of AMI?
 
-As said above, there is no way we can change the base image of the VM without deleting the old VM and creating a fresh one. This is what Terraform has planned to do.
+As said above, there is no way we can change the base image of the VM without deleting the old VM and creating a fresh one. This is what Terraform has planned to do. Terraform respects the “immutable infrastructure” principle: instead of updating, it replaces the instance.
 
 Running `terraform apply` again is successfully recreating another instance.
 ```
@@ -325,14 +323,251 @@ The caller identity has changed after defining the alias.
     "Arn": "arn:aws:iam::000000000000:root"
 }
 ```
+Now, we see many more regions listed (41 instead of 18): previously, only the regions supported by our account were displayed, whereas now all AWS regions are shown, including those where our account has not yet opted in. For example, regions like ap-east-1 or eu-south-2 are included even though they are not opted-in for our account.
+```console
+> aws ec2 describe-regions
+{
+    "Regions": [
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "af-south-1",
+            "Endpoint": "ec2.af-south-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-east-1",
+            "Endpoint": "ec2.ap-east-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-east-2",
+            "Endpoint": "ec2.ap-east-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-northeast-1",
+            "Endpoint": "ec2.ap-northeast-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-northeast-2",
+            "Endpoint": "ec2.ap-northeast-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-northeast-3",
+            "Endpoint": "ec2.ap-northeast-3.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-south-1",
+            "Endpoint": "ec2.ap-south-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-south-2",
+            "Endpoint": "ec2.ap-south-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-southeast-1",
+            "Endpoint": "ec2.ap-southeast-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-southeast-2",
+            "Endpoint": "ec2.ap-southeast-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ap-southeast-3",
+            "Endpoint": "ec2.ap-southeast-3.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-southeast-4",
+            "Endpoint": "ec2.ap-southeast-4.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-southeast-5",
+            "Endpoint": "ec2.ap-southeast-5.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-southeast-6",
+            "Endpoint": "ec2.ap-southeast-6.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ap-southeast-7",
+            "Endpoint": "ec2.ap-southeast-7.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "ca-central-1",
+            "Endpoint": "ec2.ca-central-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "ca-west-1",
+            "Endpoint": "ec2.ca-west-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-central-1",
+            "Endpoint": "ec2.eu-central-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "eu-central-2",
+            "Endpoint": "ec2.eu-central-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-north-1",
+            "Endpoint": "ec2.eu-north-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-south-1",
+            "Endpoint": "ec2.eu-south-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "eu-south-2",
+            "Endpoint": "ec2.eu-south-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-west-1",
+            "Endpoint": "ec2.eu-west-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-west-2",
+            "Endpoint": "ec2.eu-west-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "eu-west-3",
+            "Endpoint": "ec2.eu-west-3.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "il-central-1",
+            "Endpoint": "ec2.il-central-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "me-central-1",
+            "Endpoint": "ec2.me-central-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "me-south-1",
+            "Endpoint": "ec2.me-south-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "not-opted-in",
+            "RegionName": "mx-central-1",
+            "Endpoint": "ec2.mx-central-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "sa-east-1",
+            "Endpoint": "ec2.sa-east-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-east-1",
+            "Endpoint": "ec2.us-east-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-east-2",
+            "Endpoint": "ec2.us-east-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-west-1",
+            "Endpoint": "ec2.us-west-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-west-2",
+            "Endpoint": "ec2.us-west-2.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-gov-east-1",
+            "Endpoint": "ec2.us-gov-east-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "us-gov-west-1",
+            "Endpoint": "ec2.us-gov-west-1.amazonaws.com"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "cn-north-1",
+            "Endpoint": "ec2.cn-north-1.amazonaws.com.cn"
+        },
+        {
+            "OptInStatus": "opt-in-not-required",
+            "RegionName": "cn-northwest-1",
+            "Endpoint": "ec2.cn-northwest-1.amazonaws.com.cn"
+        }
+    ]
+}
+
+```
 
 
 > When switching from AWS services to LocalStack, why do you need to do an init again? Think about the role of the Terraform state file.
 
-The `tflocal init` command doesn't seem to do anything on the files of the `terraform` folder. This is probably because the state file needs to be reset to avoid considering the AWS infrastructure state as the localstack state.
+The `tflocal init` command doesn't seem to do anything on the files of the `terraform` folder. This is probably because the state file needs to be reset to avoid considering the AWS infrastructure state as the localstack state. It may also be that since the provider configuration in main.tf still points to the default AWS region without explicitly specifying LocalStack endpoints, Terraform does not detect a change that would require updating the .terraform folder or the lock file. In other words, tflocal might redirect API calls internally without modifying the local Terraform configuration files.
 
 
 > Show in the report how you verified that the instance was "created" in LocalStack.
+There is obviously the command ` aws ec2 describe-instances` who previously retruns 
+ ```console
+$ aws ec2 describe-instances
+{
+    "Reservations": []
+}
+```
+It now returns:
+ ```console
+Reservations": [
+        {
+            "ReservationId": "r-0aba407d07197ce52",
+            "OwnerId": "352909266144",
+            "Groups": [],
+            "Instances": [
+            ...
+```
+The same applies to the command `aws ec2 describe-volumes`. Previously:
+```console
+$ aws ec2 describe-volumes
+{
+    "Volumes": []
+}
+```
+It now returns:
+
+```
+{
+    "Volumes": [
+        {
+            "AvailabilityZoneId": "use1-az4",
+            "Iops": 3000,
+            "VolumeType": "gp3",
+            "MultiAttachEnabled": false,
+            "Throughput": 125,
+            "Operator": {
+            ...
+```
 
 To prove that something fake is running in LocalStack, we can list used services before and after.
 
