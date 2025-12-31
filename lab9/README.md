@@ -530,7 +530,7 @@ The `tflocal init` command doesn't seem to do anything on the files of the `terr
 
 
 > Show in the report how you verified that the instance was "created" in LocalStack.
-There is obviously the command ` aws ec2 describe-instances` who previously retruns 
+There is obviously the command `aws ec2 describe-instances` who was previously returning
  ```console
 $ aws ec2 describe-instances
 {
