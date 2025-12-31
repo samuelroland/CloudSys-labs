@@ -9,7 +9,7 @@ See [the instructions](https://moodle.msengineering.ch/mod/assign/view.php?id=22
 
     
 # Task 1 - Set up Kubernetes cluster
-We downloaded and installed Minikube on our our linux local machine.
+We downloaded and installed Minikube on our local Linux machine.
 ```sh
 curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
@@ -44,7 +44,7 @@ kubelet: Running
 apiserver: Running
 kubeconfig: Configured
 ```
-We list list the nodes of the cluster with `kubectl`
+We list the nodes of the cluster with `kubectl`
 ```console
 > kubectl get nodes
 NAME       STATUS   ROLES           AGE     VERSION
@@ -57,7 +57,7 @@ Here we can see the deployed nodes.
 
 ## Task 2 - Deploy services and Circuit Breaker
 ### 2.1 Deploy the mock webserver
-After downloading the zip archive (`circuitbreaker.zip`) provided for this lab, we use the yaml file to deploy the provided container image of the mock webserver on Kubernetes.
+After downloading the zip archive (`circuitbreaker.zip`) provided for this lab, we use the YAML file to deploy the provided container image of the mock webserver on Kubernetes.
 ```console
 > cd circuitbreaker/
 > kubectl create -f mock-webserver-deployment.yaml
@@ -668,13 +668,13 @@ Here is the full Circuit Breaker log, including startup, initial health checks, 
 We delete the Kubernetes resources:
 ```console
 > kubectl delete service/circuitbreaker-service
-                                                            kubectl delete service/fallback-service
-                                                            kubectl delete service/mock-service
-                                                            kubectl delete deployment/circuitbreaker-deployment
-                                                            kubectl delete deployment/fallback-webserver-deployment
-                                                            kubectl delete deployment/mock-webserver-deployment
-                                                            kubectl delete configmap/nginx-configuration
-                                                            kubectl delete secret/regcred
+    kubectl delete service/fallback-service
+    kubectl delete service/mock-service
+    kubectl delete deployment/circuitbreaker-deployment
+    kubectl delete deployment/fallback-webserver-deployment
+    kubectl delete deployment/mock-webserver-deployment
+    kubectl delete configmap/nginx-configuration
+    kubectl delete secret/regcred
 
 service "circuitbreaker-service" deleted from default namespace
 service "fallback-service" deleted from default namespace
